@@ -1,0 +1,12 @@
+@import url(//fonts.googleapis.com/css?family=Dosis:400,600);
+
+html {
+  /*font-family:"Open Sans";*/
+  font-family: 'Dosis';
+}
+
+$backgroundColour: #333;
+
+body {
+  background-color: $backgroundColour;
+}

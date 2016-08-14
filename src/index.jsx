@@ -1,6 +1,7 @@
-require("../node_modules/bootstrap/dist/css/bootstrap.min.css")
+require("../node_modules/bootstrap/dist/css/bootstrap.min.css");
 import React from 'react';
 import ReactDOM from 'react-dom';
+require("./styles/customisations.scss");
 
 export class App extends React.Component {
 	render() {
