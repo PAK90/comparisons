@@ -4,7 +4,7 @@ var path = require('path');
 var loaders = require('./webpack.loaders');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 
-const HOST = process.env.HOST || "192.168.1.103";
+const HOST = process.env.HOST || "0.0.0.0";
 const PORT = process.env.PORT || "3333";
 
 module.exports = {
