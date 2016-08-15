@@ -6,7 +6,7 @@ module.exports = [
 	},
 	{
 		test: /(\.scss|\.css)$/,
-		loader: 'style-loader!css-loader'
+		loader: 'style-loader!css-loader!sass-loader'
 	},
 	{
 		test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
