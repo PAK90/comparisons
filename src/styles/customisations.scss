@@ -5,7 +5,15 @@ html {
   font-family: 'Dosis';
 }
 
-$backgroundColour: #ccc;
+$backgroundColour: #eee;
+
+body {
+  background-color: $backgroundColour;
+}
+
+.content {
+  position: relative;
+}
 
 .header {
 	position: fixed;
@@ -13,8 +21,4 @@ $backgroundColour: #ccc;
 	left: 0;
 	width: 100%;
 	background-color: #aaa;
-}
-
-body {
-  background-color: $backgroundColour;
 }
