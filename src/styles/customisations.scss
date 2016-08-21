@@ -9,6 +9,7 @@ $backgroundColour: #eee;
 
 body {
   background-color: $backgroundColour;
+  margin: 0px;
 }
 
 .content {
@@ -16,9 +17,24 @@ body {
 }
 
 .header {
-	position: fixed;
+	padding: 5px;
 	top: 0;
 	left: 0;
 	width: 100%;
-	background-color: #aaa;
+	@media screen and (max-width: 40.5em) {
+		background-color: #fff;	
+	}
+	@media screen and (min-width: 40.5em) {
+		background-color: #aaa;	
+	}
+}
+
+.thingHolder {
+	display: flex;
+}
+
+.thingContainer {
+	padding: 4px;
+	background-color: #ccc;
+	margin: 3px;
 }
