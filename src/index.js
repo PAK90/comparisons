@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as firebase from 'firebase';
-//require("firebase/auth");
-//require("firebase/database");
 import ReactFireMixin from 'reactfire';
 require("./styles/customisations.scss");
 import Thing from './thing.js';
+import Progress from 'react-progressbar';
+var Line = require('rc-progress').Line;
 
 // Initialize Firebase
 var config = {
@@ -61,6 +61,9 @@ var App = React.createClass({
 
 	render: function() {
 		var indices = this.generateTwoRandoms();
+		var rightVotes = this.state.items[0] ? this.state.items[indices[1]]["pairs"][this.state.items[indices[0]][".key"]] : 0;
+		var leftVotes = this.state.items[0] ? this.state.items[indices[0]]["pairs"][this.state.items[indices[1]][".key"]] : 0;
+		console.log(leftVotes*100/(rightVotes+leftVotes));
 		return (
 			<div className="body">
 				<div className="header">
@@ -72,8 +75,13 @@ var App = React.createClass({
 					<div className="thingHolder">
 						<Thing thing={this.state.items[indices[0]]}/>
 						<Thing thing={this.state.items[indices[1]]}/>
+
 					</div>
-					<p>This matchup: right has {this.state.items[0] ? this.state.items[indices[1]]["pairs"][this.state.items[indices[0]][".key"]] : "0"} votes</p>
+					
+						<div className="progressContainer">
+							<Line percent={leftVotes*100/(rightVotes+leftVotes)} strokeColor="#28d56c" strokeWidth="5"/>
+						</div>
+					<p>This matchup: left has {leftVotes} votes and right has {rightVotes}</p>
 				</div>					
 			</div>
 		);

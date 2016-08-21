@@ -37,4 +37,12 @@ body {
 	padding: 4px;
 	background-color: #ccc;
 	margin: 3px;
+	transition-duration: 0.5s;
+}
+.thingContainer:hover {
+	background-color: #28d65c;
+}
+
+.progressContainer {
+	max-width: 200px;
 }
