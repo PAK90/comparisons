@@ -42,6 +42,10 @@ body {
 .thingContainer:hover {
 	background-color: #28d65c;
 }
+.thingContainer:active {
+	background-color: #000000;
+	color: #ffffff;
+}
 
 .progressContainer {
 	max-width: 200px;
