@@ -1,4 +1,5 @@
-"use strict";
+'use strict';
+
 const webpack = require('webpack');
 const path = require('path');
 const loaders = require('./webpack.loaders');
@@ -11,9 +12,9 @@ const config = {}
 
 config.entry = []
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV !== 'production') {
   config.devtool = process.env.WEBPACK_DEVTOOL || 'source-map';
-  config.entry.push('webpack-dev-server/client?http://${HOST}:${PORT}'); // WebpackDevServer host and port
+  config.entry.push(`webpack-dev-server/client?http://${HOST}:${PORT}`); // WebpackDevServer host and port
   config.entry.push('webpack/hot/only-dev-server');
 }
 
