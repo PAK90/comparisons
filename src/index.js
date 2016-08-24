@@ -57,30 +57,41 @@ var App = React.createClass({
     clickUpdates['items/'+this.state.items[item][".key"]+"/pairs/"+[this.state.items[otherItem][".key"]]] = this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1;
     clickUpdates['items/'+this.state.items[otherItem][".key"]+"/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] + 1;
     var status = firebase.database().ref().update(clickUpdates);
+    // Generate a new pair.
+    this.generateTwoRandoms();
   },
 
   componentWillMount: function() {
     // Get the base 'items' database reference.
-    var fireRef = firebase.database().ref().child('items');
-    //var waffleRef = fireRef.child('Waffle/category');
+    var countRef = firebase.database().ref().child('itemCount');
+    var itemRef = firebase.database().ref().child('items');
+    //var waffleRef = countRef.child('Waffle/category');
     // When anything in it changes, update the number of items.
     // TODO: change this to on children changing.
-    fireRef.on('value', snap => {
+    countRef.on('value', snap => {
       this.setState({
-        numberOfItems: snap.numChildren()
+        numberOfItems: snap.val()
       }, this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
     });
 
     // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
-    this.bindAsArray(fireRef, "items");
+    this.bindAsArray(itemRef, "items");
   },
 
   render: function() {
     //var indices = this.generateTwoRandoms();
     // Here we access the item's "pairs" array, indexed on the key of the other item. (e.g. the Waffle pair entry of the Pancake item.)
-    var rightVotes = this.state.items[0] ? this.state.items[this.state.item2]["pairs"][this.state.items[this.state.item1][".key"]] : 0;
-    var leftVotes = this.state.items[0] ? this.state.items[this.state.item1]["pairs"][this.state.items[this.state.item2][".key"]] : 0;
-    var votePercent = leftVotes/(rightVotes+leftVotes)*100;
+    /*if (this.state.items[this.state.numberOfItems-1]) {
+	    if (!this.state.items[this.state.item2]["pairs"] || !this.state.items[this.state.item2]["pairs"][this.state.item1]) {
+	    	console.log("no pairs!");
+	    	firebase.database().ref('items/' + this.state.items[this.state.item2] + '/pairs').set({
+	    		"0": 0
+	    	})
+	    }
+	}*/
+    var rightVotes = this.state.items[this.state.numberOfItems-1] ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
+    var leftVotes = this.state.items[this.state.numberOfItems-1] ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
+    var votePercent = (rightVotes != 0 && leftVotes != 0) ? leftVotes/(rightVotes+leftVotes)*100 : 100;
     console.log(votePercent);
     return (
       <div className="body">
