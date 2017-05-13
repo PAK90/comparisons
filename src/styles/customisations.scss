@@ -7,6 +7,11 @@ html {
 
 $backgroundColour: #eee;
 
+:export {
+    leftColour: #23bff9;
+    rightColour: #ffb72d;
+}
+
 body {
   background-color: $backgroundColour;
   margin: 0px;
@@ -14,6 +19,9 @@ body {
 
 .content {
   position: relative;
+  left: 25%;
+  width: 50%;
+  text-align: center;
 }
 
 .header {
@@ -22,27 +30,27 @@ body {
 	left: 0;
 	width: 100%;
 	@media screen and (max-width: 40.5em) {
-		background-color: #fff;	
+		background-color: #fff;
 	}
 	@media screen and (min-width: 40.5em) {
-		background-color: #aaa;	
+		background-color: #aaa;
 	}
 }
 
 .thingHolder {
-	display: flex;
+	display: inline-flex;
 }
 
 .thingContainer {
+  min-width: 100px;
 	padding: 4px;
 	background-color: #ccc;
 	margin: 3px;
 	transition-duration: 0.5s;
 }
-.thingContainer:hover {
-	background-color: #28d65c;
-}
 
 .progressContainer {
-	max-width: 200px;
+	max-width: 234px;
+  padding-top: 2px;
+  margin: 0 auto;
 }

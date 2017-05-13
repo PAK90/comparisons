@@ -2,10 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import * as firebase from 'firebase';
 import ReactFireMixin from 'reactfire';
-require("./styles/customisations.scss");
+import styles from "./styles/customisations.scss";
 import Thing from './thing.js';
-import Progress from 'react-progressbar';
-const Line = require('rc-progress').Line;
+const ProgressBar = require('react-progressbar.js');
+//const Line = require('rc-progress').Line;
 
 // Initialize Firebase
 const config = {
@@ -30,9 +30,9 @@ var App = React.createClass({
 
   generateTwoRandoms: function() {
     if (this.state.numberOfItems != 0) {
-      var random1 = Math.floor(Math.random()*this.state.numberOfItems);
-      var random2 = Math.floor(Math.random()*this.state.numberOfItems);
-      if (random1 == random2) {
+      var random1 = Math.floor(Math.random() * this.state.numberOfItems);
+      var random2 = Math.floor(Math.random() * this.state.numberOfItems);
+      if (random1 === random2) {
         this.generateTwoRandoms();
       }
       else {
@@ -91,8 +91,9 @@ var App = React.createClass({
 	}*/
     var rightVotes = this.state.items[this.state.numberOfItems-1] ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
     var leftVotes = this.state.items[this.state.numberOfItems-1] ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
-    var votePercent = (rightVotes != 0 && leftVotes != 0) ? leftVotes/(rightVotes+leftVotes)*100 : 100;
+    var votePercent = (rightVotes !== 0 && leftVotes !== 0) ? leftVotes / (rightVotes + leftVotes) * 100 : 100;
     console.log(votePercent);
+    var Line = ProgressBar.Line;
     return (
       <div className="body">
         <div className="header">
@@ -102,11 +103,13 @@ var App = React.createClass({
           <h1>Choose which is cooler!</h1>
           <p>Remember, there is no right answer.</p>
           <div className="thingHolder">
-            <div onClick={() => this.handleThingClick(this.state.item1)}><Thing thing={this.state.items[this.state.item1]} /></div>
-            <div onClick={() => this.handleThingClick(this.state.item2)}><Thing thing={this.state.items[this.state.item2]} /></div>
+            <div onClick={() => this.handleThingClick(this.state.item1)}><Thing thing={this.state.items[this.state.item1]} colour={styles.leftColour}  /></div>
+            <div onClick={() => this.handleThingClick(this.state.item2)}><Thing thing={this.state.items[this.state.item2]} colour={styles.rightColour}  /></div>
           </div>
           <div className="progressContainer">
-            <Line percent={votePercent} strokeColor="#28d56c" trailColor="#f92f47" strokeWidth="5"/>
+            <Line progress={votePercent / 100} initialAnimate={true}
+              options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: styles.rightColour, duration: 350}}
+              />
           </div>
           <p>This matchup: left has {leftVotes} votes and right has {rightVotes}</p>
           <button className="randomButton" onClick={() => this.generateTwoRandoms()}>Random pair!</button>

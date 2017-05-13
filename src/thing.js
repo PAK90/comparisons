@@ -19,8 +19,9 @@ var Thing = React.createClass({
 				overallPercent = '0%';
 			}
 		}
+		var borderStyle = {border:'3px solid ' + this.props.colour}
 		return (
-			<div className="thingContainer">
+			<div style={borderStyle} className="thingContainer">
 				<h2>{this.props.thing ? this.props.thing["name"] : "Loading..!"}</h2>
 				<p>{overallPercent}</p>
 			</div>
