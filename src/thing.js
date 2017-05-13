@@ -17,11 +17,11 @@ var Thing = React.createClass({
 			// ...except if there's also 0 votes in favour.
 			if (this.props.thing["votesFor"] == 0 && this.props.thing["votesAgainst"] == 0) {
 				overallPercent = '0%';
-			}			
+			}
 		}
 		return (
 			<div className="thingContainer">
-				<h2>{this.props.thing ? this.props.thing["name"] : "Loading..."}</h2>
+				<h2>{this.props.thing ? this.props.thing["name"] : "Loading..!"}</h2>
 				<p>{overallPercent}</p>
 			</div>
 		);
