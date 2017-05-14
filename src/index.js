@@ -24,7 +24,8 @@ var App = React.createClass({
       items: [],
       numberOfItems: 0,
       item1: 0,
-      item2: 0
+      item2: 0,
+      locked: false // the N second timer to prevent spammy voting.
     };
   },
 
@@ -49,14 +50,17 @@ var App = React.createClass({
   },
 
   handleThingClick: function(item) {
+    if (this.state.locked) return; // spam prevention!
+    this.setState({locked: true});
     console.log(item)
-    var otherItem = (item == this.state.item1) ? this.state.item2 : this.state.item1;
+    var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
+    setTimeout(function() {this.setState({locked: false});}.bind(this), 2000);
     // This gets the index of the item that was clicked.
     var clickUpdates = {};
-    clickUpdates['items/'+this.state.items[item][".key"]+"/votesFor"] = this.state.items[item]["votesFor"] + 1;
-    clickUpdates['items/'+this.state.items[item][".key"]+"/pairs/"+[this.state.items[otherItem][".key"]]] = this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1;
-    clickUpdates['items/'+this.state.items[otherItem][".key"]+"/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] + 1;
-    var status = firebase.database().ref().update(clickUpdates);
+    clickUpdates['items/' + this.state.items[item][".key"] + "/votesFor"] = this.state.items[item]["votesFor"] + 1;
+    clickUpdates['items/' + this.state.items[item][".key"] + "/pairs/"+[this.state.items[otherItem][".key"]]] = this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1;
+    clickUpdates['items/' + this.state.items[otherItem][".key"] + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] + 1;
+    var status = firebase.database().ref().update(clickUpdates); // should really check this status.
     // Generate a new pair.
     this.generateTwoRandoms();
   },
@@ -108,7 +112,7 @@ var App = React.createClass({
           </div>
           <div className="progressContainer">
             <Line progress={votePercent / 100} initialAnimate={true}
-              options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: styles.rightColour, duration: 350}}
+              options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: styles.rightColour, duration: 350, easing: 'easeInOut'}}
               />
           </div>
           <p>This matchup: left has {leftVotes} votes and right has {rightVotes}</p>
