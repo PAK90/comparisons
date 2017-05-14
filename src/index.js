@@ -5,6 +5,9 @@ import ReactFireMixin from 'reactfire';
 import styles from "./styles/customisations.scss";
 import Thing from './thing.js';
 const ProgressBar = require('react-progressbar.js');
+import sha1 from 'sha1';
+const base = require('1636');
+const queryString = require('query-string');
 //const Line = require('rc-progress').Line;
 
 // Initialize Firebase
@@ -25,12 +28,13 @@ var App = React.createClass({
       numberOfItems: 0,
       item1: 0,
       item2: 0,
+      pair: null,
       locked: false // the N second timer to prevent spammy voting.
     };
   },
 
   generateTwoRandoms: function() {
-    if (this.state.numberOfItems != 0) {
+    if (this.state.numberOfItems !== 0) {
       var random1 = Math.floor(Math.random() * this.state.numberOfItems);
       var random2 = Math.floor(Math.random() * this.state.numberOfItems);
       if (random1 === random2) {
@@ -38,10 +42,23 @@ var App = React.createClass({
       }
       else {
         //return [random1, random2];
+        var pair = [random1, random2].sort();
+        var hash = sha1(pair[0].toString() + ',' + pair[1].toString()); // TODO: sort in increasing order so they're the same.
+        hash = base.to36(hash.slice(0, 7))
+        console.log(hash);
         this.setState({
           item1: random1,
-          item2: random2
-        })
+          item2: random2,
+          pair: hash
+        });
+        // now update the url silently, without reloading the page.
+        var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
+        window.history.pushState({path: newurl}, '', newurl);
+        // also update firebase with the new pair.
+        var pairUpdates = {};
+        pairUpdates['pairs/' + hash + '/' + random1] = true;
+        pairUpdates['pairs/' + hash + '/' + random2] = true;
+        var status = firebase.database().ref().update(pairUpdates); // should really check this status.
       }
     }
     /*else {
@@ -51,18 +68,37 @@ var App = React.createClass({
 
   handleThingClick: function(item) {
     if (this.state.locked) return; // spam prevention!
-    this.setState({locked: true});
+    this.setState({locked: true}); // if we got in, prevent clicking.
     console.log(item)
     var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
-    setTimeout(function() {this.setState({locked: false});}.bind(this), 2000);
+    setTimeout(function() {this.setState({locked: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
     // This gets the index of the item that was clicked.
     var clickUpdates = {};
     clickUpdates['items/' + this.state.items[item][".key"] + "/votesFor"] = this.state.items[item]["votesFor"] + 1;
-    clickUpdates['items/' + this.state.items[item][".key"] + "/pairs/"+[this.state.items[otherItem][".key"]]] = this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1;
+    clickUpdates['items/' + this.state.items[item][".key"] + "/pairs/" + [this.state.items[otherItem][".key"]]] = this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1;
     clickUpdates['items/' + this.state.items[otherItem][".key"] + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] + 1;
     var status = firebase.database().ref().update(clickUpdates); // should really check this status.
     // Generate a new pair.
     this.generateTwoRandoms();
+  },
+
+  setItemsFromUrl: function() {
+    // Get the current URL.
+    console.log(location.search);
+    if (location.search) { // if we already have a url.
+      const parsedHash = queryString.parse(location.search);
+      this.setState({pair: parsedHash.p});
+      firebase.database().ref().child("pairs/" + parsedHash.p).on('value', snap => {
+          console.log(snap.val());
+          if (snap.val()) { // wrong hashes will result in null.
+            this.setState({
+              item1: Object.keys(snap.val())[0],
+              item2: Object.keys(snap.val())[1]
+            });
+          }
+          else this.generateTwoRandoms();
+      })
+    }
   },
 
   componentWillMount: function() {
@@ -75,7 +111,7 @@ var App = React.createClass({
     countRef.on('value', snap => {
       this.setState({
         numberOfItems: snap.val()
-      }, this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
+      }, location.search ? this.setItemsFromUrl : this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
     });
 
     // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
