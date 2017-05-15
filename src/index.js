@@ -4,6 +4,7 @@ import * as firebase from 'firebase';
 import ReactFireMixin from 'reactfire';
 import styles from "./styles/customisations.scss";
 import Thing from './thing.js';
+import Searchbox from './searchbox.js';
 const ProgressBar = require('react-progressbar.js');
 import sha1 from 'sha1';
 const base = require('1636');
@@ -28,9 +29,29 @@ var App = React.createClass({
       numberOfItems: 0,
       item1: 0,
       item2: 0,
-      pair: null,
       locked: false // the N second timer to prevent spammy voting.
     };
+  },
+
+  placeNewItem: function(isLeft, itemIndex) {
+    if (itemIndex !== this.state.item1 && itemIndex !== this.state.item2) { // don't want duplicate items as pairs.
+      isLeft ? this.setState({item1: itemIndex}, this.changeUrl(itemIndex, this.state.item2)) : this.setState({item2: itemIndex}, this.changeUrl(this.state.item1, itemIndex));
+    }
+  },
+
+  changeUrl: function(item1, item2) {
+    var pair = [item1, item2].sort();
+    var hash = sha1(pair[0].toString() + ',' + pair[1].toString()); // TODO: sort in increasing order so they're the same.
+    hash = base.to36(hash.slice(0, 7))
+    // now update the url silently, without reloading the page.
+    var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
+    window.history.pushState({path: newurl}, '', newurl);
+    console.log(hash);
+    // also update firebase with the new pair.
+    var pairUpdates = {};
+    pairUpdates['pairs/' + hash + '/' + item1] = true;
+    pairUpdates['pairs/' + hash + '/' + item2] = true;
+    var status = firebase.database().ref().update(pairUpdates); // should really check this status.
   },
 
   generateTwoRandoms: function() {
@@ -41,29 +62,13 @@ var App = React.createClass({
         this.generateTwoRandoms();
       }
       else {
-        //return [random1, random2];
-        var pair = [random1, random2].sort();
-        var hash = sha1(pair[0].toString() + ',' + pair[1].toString()); // TODO: sort in increasing order so they're the same.
-        hash = base.to36(hash.slice(0, 7))
-        console.log(hash);
+        this.changeUrl(random1, random2);
         this.setState({
           item1: random1,
-          item2: random2,
-          pair: hash
+          item2: random2
         });
-        // now update the url silently, without reloading the page.
-        var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
-        window.history.pushState({path: newurl}, '', newurl);
-        // also update firebase with the new pair.
-        var pairUpdates = {};
-        pairUpdates['pairs/' + hash + '/' + random1] = true;
-        pairUpdates['pairs/' + hash + '/' + random2] = true;
-        var status = firebase.database().ref().update(pairUpdates); // should really check this status.
       }
     }
-    /*else {
-      return [0,0];
-    }*/
   },
 
   handleThingClick: function(item) {
@@ -74,9 +79,10 @@ var App = React.createClass({
     setTimeout(function() {this.setState({locked: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
     // This gets the index of the item that was clicked.
     var clickUpdates = {};
-    clickUpdates['items/' + this.state.items[item][".key"] + "/votesFor"] = this.state.items[item]["votesFor"] + 1;
-    clickUpdates['items/' + this.state.items[item][".key"] + "/pairs/" + [this.state.items[otherItem][".key"]]] = this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1;
-    clickUpdates['items/' + this.state.items[otherItem][".key"] + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] + 1;
+    clickUpdates['items/' + this.state.items[item][".key"] + "/votesFor"] = this.state.items[item]["votesFor"] ? this.state.items[item]["votesFor"] + 1 : 1;
+    // to deal with new items: IF pairs AND pairs.key exist, write value else write 1.
+    clickUpdates['items/' + this.state.items[item][".key"] + "/pairs/" + [this.state.items[otherItem][".key"]]] = (this.state.items[item]["pairs"] && this.state.items[item]["pairs"][this.state.items[otherItem][".key"]]) ? this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1 : 1;
+    clickUpdates['items/' + this.state.items[otherItem][".key"] + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] ? this.state.items[otherItem]["votesAgainst"] + 1 : 1;
     var status = firebase.database().ref().update(clickUpdates); // should really check this status.
     // Generate a new pair.
     this.generateTwoRandoms();
@@ -105,7 +111,6 @@ var App = React.createClass({
     // Get the base 'items' database reference.
     var countRef = firebase.database().ref().child('itemCount');
     var itemRef = firebase.database().ref().child('items');
-    //var waffleRef = countRef.child('Waffle/category');
     // When anything in it changes, update the number of items.
     // TODO: change this to on children changing.
     countRef.on('value', snap => {
@@ -129,9 +134,9 @@ var App = React.createClass({
 	    	})
 	    }
 	}*/
-    var rightVotes = this.state.items[this.state.numberOfItems-1] ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
-    var leftVotes = this.state.items[this.state.numberOfItems-1] ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
-    var votePercent = (rightVotes !== 0 && leftVotes !== 0) ? leftVotes / (rightVotes + leftVotes) * 100 : 100;
+    var rightVotes = (this.state.items[this.state.numberOfItems - 1] && this.state.items[this.state.item2]["pairs"]) ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
+    var leftVotes = (this.state.items[this.state.numberOfItems - 1] && this.state.items[this.state.item1]["pairs"]) ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
+    var votePercent = (rightVotes && leftVotes) ? leftVotes / (rightVotes + leftVotes) * 100 : leftVotes ? 100 : 0;
     console.log(votePercent);
     var Line = ProgressBar.Line;
     return (
@@ -142,16 +147,23 @@ var App = React.createClass({
         <div className="content">
           <h1>Choose which is cooler!</h1>
           <p>Remember, there is no right answer.</p>
+          <div>
+            <Searchbox items={this.state.items} selected={this.placeNewItem} />
+          </div>
           <div className="thingHolder">
-            <div onClick={() => this.handleThingClick(this.state.item1)}><Thing thing={this.state.items[this.state.item1]} colour={styles.leftColour}  /></div>
-            <div onClick={() => this.handleThingClick(this.state.item2)}><Thing thing={this.state.items[this.state.item2]} colour={styles.rightColour}  /></div>
+            <div onClick={() => this.handleThingClick(this.state.item1)}>
+              <Thing thing={this.state.items[this.state.item1]} colour={styles.leftColour}  />
+            </div>
+            <div onClick={() => this.handleThingClick(this.state.item2)}>
+              <Thing thing={this.state.items[this.state.item2]} colour={styles.rightColour}  />
+            </div>
           </div>
           <div className="progressContainer">
             <Line progress={votePercent / 100} initialAnimate={true}
               options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: styles.rightColour, duration: 350, easing: 'easeInOut'}}
               />
           </div>
-          <p>This matchup: left has {leftVotes} votes and right has {rightVotes}</p>
+          <p>This matchup: left has {leftVotes ? leftVotes : 0} votes and right has {rightVotes ? rightVotes : 0}</p>
           <button className="randomButton" onClick={() => this.generateTwoRandoms()}>Random pair!</button>
         </div>
       </div>
