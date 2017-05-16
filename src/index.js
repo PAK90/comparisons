@@ -29,7 +29,8 @@ var App = React.createClass({
       numberOfItems: 0,
       item1: 0,
       item2: 0,
-      locked: false // the N second timer to prevent spammy voting.
+      locked: false, // false, 1 or 2. denotes which item won't change when generating new pair.
+      paused: false // the N second timer to prevent spammy voting.
     };
   },
 
@@ -56,8 +57,8 @@ var App = React.createClass({
 
   generateTwoRandoms: function() {
     if (this.state.numberOfItems !== 0) {
-      var random1 = Math.floor(Math.random() * this.state.numberOfItems);
-      var random2 = Math.floor(Math.random() * this.state.numberOfItems);
+      var random1 = this.state.locked === 1 ? this.state.item1 : Math.floor(Math.random() * this.state.numberOfItems);
+      var random2 = this.state.locked === 2 ? this.state.item2 : Math.floor(Math.random() * this.state.numberOfItems);
       if (random1 === random2) {
         this.generateTwoRandoms();
       }
@@ -72,11 +73,11 @@ var App = React.createClass({
   },
 
   handleThingClick: function(item) {
-    if (this.state.locked) return; // spam prevention!
-    this.setState({locked: true}); // if we got in, prevent clicking.
+    if (this.state.paused) return; // spam prevention!
+    this.setState({paused: true}); // if we got in, prevent clicking.
     console.log(item)
     var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
-    setTimeout(function() {this.setState({locked: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
+    setTimeout(function() {this.setState({paused: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
     // This gets the index of the item that was clicked.
     var clickUpdates = {};
     clickUpdates['items/' + this.state.items[item][".key"] + "/votesFor"] = this.state.items[item]["votesFor"] ? this.state.items[item]["votesFor"] + 1 : 1;
@@ -162,6 +163,14 @@ var App = React.createClass({
             <Line progress={votePercent / 100} initialAnimate={true}
               options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: styles.rightColour, duration: 350, easing: 'easeInOut'}}
               />
+          </div>
+          <div className="lockContainer">
+            <button className="lockButton" onClick={() =>
+              !this.state.locked ? this.setState({locked: 1}) : this.state.locked === 1 ? this.setState({locked: false}) : this.setState({locked: 1})}>
+              {this.state.locked === 1 ? "Unlock 1" : "Lock 1"}</button>
+            <button className="lockButton" onClick={() =>
+              !this.state.locked ? this.setState({locked: 2}) : this.state.locked === 2 ? this.setState({locked: false}) : this.setState({locked: 2})}>
+              {this.state.locked === 2 ? "Unlock 2" : "Lock 2"}</button>
           </div>
           <p>This matchup: left has {leftVotes ? leftVotes : 0} votes and right has {rightVotes ? rightVotes : 0}</p>
           <button className="randomButton" onClick={() => this.generateTwoRandoms()}>Random pair!</button>

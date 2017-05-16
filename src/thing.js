@@ -1,11 +1,23 @@
 import React from 'react';
+import axios from 'axios';
 require("./styles/customisations.scss");
 
 var Thing = React.createClass({
 	getInitialState: function() {
       return {
+				gif: null
       };
   },
+
+	componentWillReceiveProps: function(nextProps) {
+		if (this.props.thing) {
+			axios.get('https://api.giphy.com/v1/gifs/search?q=' + nextProps.thing.name + '&api_key=dc6zaTOxFJmzC&limit=3')
+				.then(function(response) {
+					console.log(response);
+					this.setState({gif: response.data.data[1].images.fixed_height.url})
+				}.bind(this))
+			}
+	},
 
 	render: function() {
 		var overallPercent = "0%";
@@ -22,6 +34,7 @@ var Thing = React.createClass({
 		return (
 			<div style={borderStyle} className="thingContainer">
 				<h2>{this.props.thing ? this.props.thing["name"] : "Loading..!"}</h2>
+				<img src={this.state.gif} style={{maxHeight: '200px'}}/>
 				<p>{overallPercent}</p>
 			</div>
 		);
