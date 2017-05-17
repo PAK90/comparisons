@@ -32,6 +32,7 @@
     "json5-loader": "^0.6.0",
     "jsx-loader": "^0.13.2",
     "less-loader": "^2.2.3",
+    "lodash": "^4.17.4",
     "query-string": "^4.3.4",
     "rc-progress": "^1.0.4",
     "react": "^15.3.1",

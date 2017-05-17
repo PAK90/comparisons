@@ -47,7 +47,8 @@ body {
 }
 
 .thingContainer {
-  min-width: 100px;
+  height: 340px;
+  width: 400px;
 	@media screen and (max-width: 40.5em) {
 		min-width: 80px;
 	}

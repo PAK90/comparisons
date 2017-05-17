@@ -29,6 +29,7 @@ var App = React.createClass({
       numberOfItems: 0,
       item1: 0,
       item2: 0,
+      keepWinner: false,
       locked: false, // false, 1 or 2. denotes which item won't change when generating new pair.
       paused: false // the N second timer to prevent spammy voting.
     };
@@ -55,12 +56,12 @@ var App = React.createClass({
     var status = firebase.database().ref().update(pairUpdates); // should really check this status.
   },
 
-  generateTwoRandoms: function() {
+  generateTwoRandoms: function(winner) {
     if (this.state.numberOfItems !== 0) {
-      var random1 = this.state.locked === 1 ? this.state.item1 : Math.floor(Math.random() * this.state.numberOfItems);
-      var random2 = this.state.locked === 2 ? this.state.item2 : Math.floor(Math.random() * this.state.numberOfItems);
+      var random1 = (this.state.locked === 1 || winner === this.state.item1) ? this.state.item1 : Math.floor(Math.random() * this.state.numberOfItems);
+      var random2 = (this.state.locked === 2 || winner === this.state.item2) ? this.state.item2 : Math.floor(Math.random() * this.state.numberOfItems);
       if (random1 === random2) {
-        this.generateTwoRandoms();
+        this.generateTwoRandoms(winner);
       }
       else {
         this.changeUrl(random1, random2);
@@ -86,7 +87,7 @@ var App = React.createClass({
     clickUpdates['items/' + this.state.items[otherItem][".key"] + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] ? this.state.items[otherItem]["votesAgainst"] + 1 : 1;
     var status = firebase.database().ref().update(clickUpdates); // should really check this status.
     // Generate a new pair.
-    this.generateTwoRandoms();
+    this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
   },
 
   setItemsFromUrl: function() {
@@ -179,6 +180,9 @@ var App = React.createClass({
             <button className="lockButton" onClick={() =>
               !this.state.locked ? this.setState({locked: 1}) : this.state.locked === 1 ? this.setState({locked: false}) : this.setState({locked: 1})}>
               {this.state.locked === 1 ? "Unlock 1" : "Lock 1"}</button>
+            <input type="checkbox"
+              onChange={() => this.setState({keepWinner: !this.state.keepWinner})}
+              checked={this.state.keepWinner} /><label onClick={() => this.setState({keepWinner: !this.state.keepWinner})}>Keep winner</label>
             <button className="lockButton" onClick={() =>
               !this.state.locked ? this.setState({locked: 2}) : this.state.locked === 2 ? this.setState({locked: false}) : this.setState({locked: 2})}>
               {this.state.locked === 2 ? "Unlock 2" : "Lock 2"}</button>

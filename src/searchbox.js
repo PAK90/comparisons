@@ -1,4 +1,5 @@
 import React from 'react';
+import _ from 'lodash'
 import styles from "./styles/customisations.scss";
 require("./styles/searchbox.scss");
 import Autosuggest from 'react-autosuggest';
@@ -57,7 +58,7 @@ var Searchbox = React.createClass({
     return (
       <div className="inputContainer">
         <img className="icon" src="http://www.freeiconspng.com/uploads/add-list-icon--icon-search-engine-26.png"
-          style={{width: (!this.state.suggestions.length && this.state.value !== "") ? "25px" : "0px", cursor: "pointer"}}
+          style={{width: (!_.find(this.state.suggestions, ['name', this.state.value]) && this.state.value !== "") ? "25px" : "0px", cursor: "pointer"}}
           title="Add this item to the database!" onClick={() => this.props.addItem(this.state.value)}/>
         <input {...inputProps}/>
       </div>
