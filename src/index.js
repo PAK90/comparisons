@@ -124,6 +124,17 @@ var App = React.createClass({
     this.bindAsArray(itemRef, "items");
   },
 
+  addItem: function(item) {
+    if (!item) return;
+    // increment the item count, and add the item. simple!
+    // don't have to check for item existence in the item array because the searchbox already takes care of that.
+    var addUpdate = {};
+    addUpdate['itemCount'] = this.state.numberOfItems + 1;
+    addUpdate['items/' + (this.state.numberOfItems) + '/name'] = item;
+    var status = firebase.database().ref().update(addUpdate); // should really check this status.
+    status.then((success) => {console.log(success); })
+  },
+
   render: function() {
     //var indices = this.generateTwoRandoms();
     // Here we access the item's "pairs" array, indexed on the key of the other item. (e.g. the Waffle pair entry of the Pancake item.)
@@ -149,7 +160,7 @@ var App = React.createClass({
           <h1>Choose which is cooler!</h1>
           <p>Remember, there is no right answer.</p>
           <div>
-            <Searchbox items={this.state.items} selected={this.placeNewItem} />
+            <Searchbox items={this.state.items} selected={this.placeNewItem} addItem={this.addItem} />
           </div>
           <div className="thingHolder">
             <div onClick={() => this.handleThingClick(this.state.item1)}>

@@ -53,12 +53,23 @@ var Searchbox = React.createClass({
     });
   },
 
+  renderInputComponent: function(inputProps) {
+    return (
+      <div className="inputContainer">
+        <img className="icon" src="http://www.freeiconspng.com/uploads/add-list-icon--icon-search-engine-26.png"
+          style={{width: (!this.state.suggestions.length && this.state.value !== "") ? "25px" : "0px", cursor: "pointer"}}
+          title="Add this item to the database!" onClick={() => this.props.addItem(this.state.value)}/>
+        <input {...inputProps}/>
+      </div>
+    )
+  },
+
   render() {
     const { value, suggestions } = this.state;
 
     // Autosuggest will pass through all these props to the input element.
     const inputProps = {
-      placeholder: 'Type a thing',
+      placeholder: 'Type a thing to add or find.',
       value,
       onChange: this.onChange
     };
@@ -72,6 +83,7 @@ var Searchbox = React.createClass({
         getSuggestionValue={getSuggestionValue}
         renderSuggestion={this.renderSuggestion}
         inputProps={inputProps}
+        renderInputComponent={this.renderInputComponent}
       />
     );
   }
