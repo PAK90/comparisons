@@ -10,11 +10,13 @@ var Thing = React.createClass({
   },
 
 	componentWillReceiveProps: function(nextProps) {
-		if (this.props.thing) {
-			axios.get('https://api.giphy.com/v1/gifs/search?q=' + nextProps.thing.name + '&api_key=dc6zaTOxFJmzC&limit=10')
+		// first if required to not blank on .key key.
+		if (this.props.thing && (this.props.thing[".key"] !== nextProps.thing[".key"])) {
+			this.setState({gif: null});
+			axios.get('https://api.giphy.com/v1/gifs/search?q=' + nextProps.thing.name + '&api_key=dc6zaTOxFJmzC&limit=25')
 				.then(function(response) {
 					console.log(response);
-					this.setState({gif: response.data.data[Math.floor(Math.random() * 10)].images.fixed_height.url})
+					this.setState({gif: response.data.data[Math.floor(Math.random() * 25)].images.fixed_height.url})
 				}.bind(this))
 			}
 	},
@@ -35,8 +37,8 @@ var Thing = React.createClass({
 		return (
 			<div style={borderStyle} className="thingContainer">
 				<h2>{this.props.thing ? this.props.thing["name"] : "Loading..!"}</h2>
-				<img src={this.state.gif} style={{maxHeight: '200px'}}/>
-				<p>{overallPercent}</p>
+				<img src={this.state.gif} style={{maxHeight: '200px', maxWidth: '400px'}}/>
+				<p>{"Win rate: " + overallPercent}</p>
 			</div>
 		);
 	}

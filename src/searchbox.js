@@ -26,11 +26,11 @@ var Searchbox = React.createClass({
   renderSuggestion: function(suggestion) {
     return (
       <div>
-        <span style={{float: 'left',  border: '3px solid' + styles.leftColour}} onClick={function() {this.props.selected(true, this.state.suggestions[0][".key"]); }.bind(this)}>L</span>
+        <span style={{float: 'left',  border: '3px solid' + styles.leftColour}} onClick={function() {this.props.selected(true, this.state.suggestions[0][".key"]); }.bind(this)}>Add</span>
         <span>
           {suggestion.name}
         </span>
-        <span style={{float: 'right', border: '3px solid' + styles.rightColour}} onClick={function() {this.props.selected(false, this.state.suggestions[0][".key"]); }.bind(this)}>R</span>
+        <span style={{float: 'right', border: '3px solid' + styles.rightColour}} onClick={function() {this.props.selected(false, this.state.suggestions[0][".key"]); }.bind(this)}>Add</span>
       </div>
     )
   },
