@@ -25,7 +25,7 @@ var App = React.createClass({
 
   getInitialState: function() {
     return {
-      items: [],
+      items: {},
       numberOfItems: 0,
       item1: 0,
       item2: 0,
@@ -44,7 +44,7 @@ var App = React.createClass({
   changeUrl: function(item1, item2) {
     var pair = [item1, item2].sort();
     var hash = sha1(pair[0].toString() + ',' + pair[1].toString()); // TODO: sort in increasing order so they're the same.
-    hash = base.to36(hash.slice(0, 7))
+    hash = base.to36(hash.slice(0, 9))
     // now update the url silently, without reloading the page.
     var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
     window.history.pushState({path: newurl}, '', newurl);
@@ -58,9 +58,20 @@ var App = React.createClass({
 
   generateTwoRandoms: function(winner) {
     if (this.state.numberOfItems !== 0) {
-      var random1 = (this.state.locked === 1 || winner === this.state.item1) ? this.state.item1 : Math.floor(Math.random() * this.state.numberOfItems);
-      var random2 = (this.state.locked === 2 || winner === this.state.item2) ? this.state.item2 : Math.floor(Math.random() * this.state.numberOfItems);
-      if (random1 === random2) {
+      var random1 = (this.state.locked === 1 || winner === this.state.item1) ? this.state.item1
+        : Object.keys(this.state.items)[Math.floor(Math.random() * this.state.numberOfItems)];
+      var random2 = (this.state.locked === 2 || winner === this.state.item2) ? this.state.item2
+        : Object.keys(this.state.items)[Math.floor(Math.random() * this.state.numberOfItems)];
+      var perc = Math.random();
+      console.log(perc);
+      if (random1 === random2 || random1 === ".key" || random2 === ".key") { // goddamn object .key prop.
+        this.generateTwoRandoms(winner);
+      }
+      // with 95% chance, generate new pair if current pair has no mutual votes.
+      else if (perc < 0.95 && (
+        (this.state.items[random1].pairs === undefined || this.state.items[random1].pairs[random2] === undefined) &&
+        (this.state.items[random2].pairs === undefined || this.state.items[random2].pairs[random1] === undefined) ) )
+      {
         this.generateTwoRandoms(winner);
       }
       else {
@@ -81,10 +92,10 @@ var App = React.createClass({
     setTimeout(function() {this.setState({paused: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
     // This gets the index of the item that was clicked.
     var clickUpdates = {};
-    clickUpdates['items/' + this.state.items[item][".key"] + "/votesFor"] = this.state.items[item]["votesFor"] ? this.state.items[item]["votesFor"] + 1 : 1;
+    clickUpdates['items/' + item + "/votesFor"] = this.state.items[item]["votesFor"] ? this.state.items[item]["votesFor"] + 1 : 1;
     // to deal with new items: IF pairs AND pairs.key exist, write value else write 1.
-    clickUpdates['items/' + this.state.items[item][".key"] + "/pairs/" + [this.state.items[otherItem][".key"]]] = (this.state.items[item]["pairs"] && this.state.items[item]["pairs"][this.state.items[otherItem][".key"]]) ? this.state.items[item]["pairs"][this.state.items[otherItem][".key"]] + 1 : 1;
-    clickUpdates['items/' + this.state.items[otherItem][".key"] + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] ? this.state.items[otherItem]["votesAgainst"] + 1 : 1;
+    clickUpdates['items/' + item + "/pairs/" + otherItem] = (this.state.items[item]["pairs"] && this.state.items[item]["pairs"][otherItem]) ? this.state.items[item]["pairs"][otherItem] + 1 : 1;
+    clickUpdates['items/' + otherItem + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] ? this.state.items[otherItem]["votesAgainst"] + 1 : 1;
     var status = firebase.database().ref().update(clickUpdates); // should really check this status.
     // Generate a new pair.
     this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
@@ -122,7 +133,7 @@ var App = React.createClass({
     });
 
     // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
-    this.bindAsArray(itemRef, "items");
+    this.bindAsObject(itemRef, "items");
   },
 
   addItem: function(item) {
@@ -131,24 +142,17 @@ var App = React.createClass({
     // don't have to check for item existence in the item array because the searchbox already takes care of that.
     var addUpdate = {};
     addUpdate['itemCount'] = this.state.numberOfItems + 1;
-    addUpdate['items/' + (this.state.numberOfItems) + '/name'] = item;
+    //addUpdate['items/' + (this.state.numberOfItems) + '/name'] = item;
     var status = firebase.database().ref().update(addUpdate); // should really check this status.
-    status.then((success) => {console.log(success); })
+    var itemRef = firebase.database().ref().child('items').push({"name": item}).then((snap) => {
+      console.log(snap.key);
+      this.setState({item1: snap.key}); // TODO: this will get updated once we have more than one searchbox.
+    });
   },
 
   render: function() {
-    //var indices = this.generateTwoRandoms();
-    // Here we access the item's "pairs" array, indexed on the key of the other item. (e.g. the Waffle pair entry of the Pancake item.)
-    /*if (this.state.items[this.state.numberOfItems-1]) {
-	    if (!this.state.items[this.state.item2]["pairs"] || !this.state.items[this.state.item2]["pairs"][this.state.item1]) {
-	    	console.log("no pairs!");
-	    	firebase.database().ref('items/' + this.state.items[this.state.item2] + '/pairs').set({
-	    		"0": 0
-	    	})
-	    }
-	}*/
-    var rightVotes = (this.state.items[this.state.numberOfItems - 1] && this.state.items[this.state.item2]["pairs"]) ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
-    var leftVotes = (this.state.items[this.state.numberOfItems - 1] && this.state.items[this.state.item1]["pairs"]) ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
+    var rightVotes = (this.state.items[this.state.item1] && this.state.items[this.state.item2]["pairs"]) ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
+    var leftVotes = (this.state.items[this.state.item2] && this.state.items[this.state.item1]["pairs"]) ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
     var votePercent = (rightVotes && leftVotes) ? leftVotes / (rightVotes + leftVotes) * 100 : leftVotes ? 100 : 0;
     console.log(votePercent);
     var Line = ProgressBar.Line;

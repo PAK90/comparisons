@@ -18,19 +18,22 @@ var Searchbox = React.createClass({
     const inputValue = value.trim().toLowerCase();
     const inputLength = inputValue.length;
 
-    return inputLength === 0 ? [] : this.props.items.filter(item =>
+    return inputLength === 0 ? [] : Object.values(this.props.items).slice(0, -1).filter(item =>
       item.name.toLowerCase().slice(0, inputLength) === inputValue
     );
   },
 
   renderSuggestion: function(suggestion) {
+    // on click, it returns the key of the object it finds with the name prop of the suggestion. Icky, but better than nothing.
     return (
       <div>
-        <span style={{float: 'left',  border: '3px solid' + styles.leftColour}} onClick={function() {this.props.selected(true, this.state.suggestions[0][".key"]); }.bind(this)}>Add</span>
+        <span style={{float: 'left',  border: '3px solid' + styles.leftColour}}
+          onClick={function() {this.props.selected(true, _.findKey(this.props.items, ['name', this.state.suggestions[0].name])); }.bind(this)}>Add</span>
         <span>
           {suggestion.name}
         </span>
-        <span style={{float: 'right', border: '3px solid' + styles.rightColour}} onClick={function() {this.props.selected(false, this.state.suggestions[0][".key"]); }.bind(this)}>Add</span>
+        <span style={{float: 'right', border: '3px solid' + styles.rightColour}}
+          onClick={function() {this.props.selected(false, _.findKey(this.props.items, ['name', this.state.suggestions[0].name])); }.bind(this)}>Add</span>
       </div>
     )
   },
