@@ -106,7 +106,11 @@ var App = React.createClass({
         if (fbitem.pairs && fbitem.pairs[otherItem]) {
           fbitem.pairs[otherItem]++;
         }
+        else if (fbitem.pairs) {
+          fbitem.pairs[otherItem] = 1;	
+        }
         else {
+          fbitem.pairs = {};
           fbitem.pairs[otherItem] = 1;
         }
         if (fbitem.votesFor) {
@@ -168,6 +172,7 @@ var App = React.createClass({
         items: snap.val()
       }, this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
     }); // no idea why this used to work with blank url and the itemCount callback, but it doesn't anymore.
+    itemRef.off();
 
     // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
     this.bindAsObject(itemRef, "items");
