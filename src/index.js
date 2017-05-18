@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import _ from 'lodash';
 import * as firebase from 'firebase';
 import ReactFireMixin from 'reactfire';
 import styles from "./styles/customisations.scss";
@@ -91,12 +92,43 @@ var App = React.createClass({
     var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
     setTimeout(function() {this.setState({paused: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
     // This gets the index of the item that was clicked.
-    var clickUpdates = {};
+  /*  var clickUpdates = {};
     clickUpdates['items/' + item + "/votesFor"] = this.state.items[item]["votesFor"] ? this.state.items[item]["votesFor"] + 1 : 1;
     // to deal with new items: IF pairs AND pairs.key exist, write value else write 1.
     clickUpdates['items/' + item + "/pairs/" + otherItem] = (this.state.items[item]["pairs"] && this.state.items[item]["pairs"][otherItem]) ? this.state.items[item]["pairs"][otherItem] + 1 : 1;
     clickUpdates['items/' + otherItem + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] ? this.state.items[otherItem]["votesAgainst"] + 1 : 1;
-    var status = firebase.database().ref().update(clickUpdates); // should really check this status.
+    var status = firebase.database().ref().update(clickUpdates); // should really check this status.*/
+
+    var itemRef = firebase.database().ref().child('items/' + item);
+    var otherItemRef = firebase.database().ref().child('items/' + otherItem);
+    itemRef.transaction(function(fbitem) {
+      if (fbitem) {
+        if (fbitem.pairs && fbitem.pairs[otherItem]) {
+          fbitem.pairs[otherItem]++;
+        }
+        else {
+          fbitem.pairs[otherItem] = 1;
+        }
+        if (fbitem.votesFor) {
+          fbitem.votesFor++;
+        }
+        else {
+          fbitem.votesFor = 1;
+        }
+      }
+      return fbitem;
+    })
+    otherItemRef.transaction(function(fbotherItem) {
+      if (fbotherItem) {
+        if (fbotherItem.votesAgainst) {
+          fbotherItem.votesAgainst++;
+        }
+        else {
+          fbotherItem.votesAgainst = 1;
+        }
+      }
+      return fbotherItem;
+    })
     // Generate a new pair.
     this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
   },
@@ -139,11 +171,16 @@ var App = React.createClass({
   addItem: function(item) {
     if (!item) return;
     // increment the item count, and add the item. simple!
-    // don't have to check for item existence in the item array because the searchbox already takes care of that.
-    var addUpdate = {};
-    addUpdate['itemCount'] = this.state.numberOfItems + 1;
-    //addUpdate['items/' + (this.state.numberOfItems) + '/name'] = item;
-    var status = firebase.database().ref().update(addUpdate); // should really check this status.
+    // as a backup, check for item name in existing items.
+    if (_.filter(this.state.items, ['name', item]).length) return;
+    var countRef = firebase.database().ref().child('itemCount');
+    countRef.transaction(function(count) {
+      if (count) {
+        count++;
+      }
+      return count;
+    }).then((snap) => {console.log(snap); });
+
     var itemRef = firebase.database().ref().child('items').push({"name": item}).then((snap) => {
       console.log(snap.key);
       this.setState({item1: snap.key}); // TODO: this will get updated once we have more than one searchbox.

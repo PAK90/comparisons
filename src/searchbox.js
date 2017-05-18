@@ -1,5 +1,5 @@
 import React from 'react';
-import _ from 'lodash'
+import _ from 'lodash';
 import styles from "./styles/customisations.scss";
 require("./styles/searchbox.scss");
 import Autosuggest from 'react-autosuggest';
