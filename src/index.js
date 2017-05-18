@@ -58,7 +58,7 @@ var App = React.createClass({
   },
 
   generateTwoRandoms: function(winner) {
-    if (this.state.numberOfItems !== 0) {
+    if (this.state.numberOfItems !== 0 && !_.isEmpty(this.state.items)) {
       var random1 = (this.state.locked === 1 || winner === this.state.item1) ? this.state.item1
         : Object.keys(this.state.items)[Math.floor(Math.random() * this.state.numberOfItems)];
       var random2 = (this.state.locked === 2 || winner === this.state.item2) ? this.state.item2
@@ -161,8 +161,13 @@ var App = React.createClass({
     countRef.on('value', snap => {
       this.setState({
         numberOfItems: snap.val()
-      }, location.search ? this.setItemsFromUrl : this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
+      }, location.search ? this.setItemsFromUrl : null);
     });
+    itemRef.on('value', snap => {
+      this.setState({
+        items: snap.val()
+      }, this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
+    }); // no idea why this used to work with blank url and the itemCount callback, but it doesn't anymore.
 
     // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
     this.bindAsObject(itemRef, "items");
