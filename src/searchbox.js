@@ -27,13 +27,9 @@ var Searchbox = React.createClass({
     // on click, it returns the key of the object it finds with the name prop of the suggestion. Icky, but better than nothing.
     return (
       <div>
-        <span style={{float: 'left',  border: '3px solid' + styles.leftColour}}
-          onClick={function() {this.props.selected(true, _.findKey(this.props.items, ['name', this.state.suggestions[0].name])); }.bind(this)}>Add</span>
         <span>
           {suggestion.name}
         </span>
-        <span style={{float: 'right', border: '3px solid' + styles.rightColour}}
-          onClick={function() {this.props.selected(false, _.findKey(this.props.items, ['name', this.state.suggestions[0].name])); }.bind(this)}>Add</span>
       </div>
     )
   },
@@ -57,13 +53,19 @@ var Searchbox = React.createClass({
     });
   },
 
+  onSuggestionSelected: function(event, suggestion) {
+    console.log(suggestion);
+    // find the key of the object with the selected suggestion's name.
+    this.props.selected(this.props.left ? true : false, _.findKey(this.props.items, ['name', suggestion.suggestionValue]));
+  },
+
   renderInputComponent: function(inputProps) {
     return (
       <div className="inputContainer">
         <img className="icon" src="http://www.freeiconspng.com/uploads/add-list-icon--icon-search-engine-26.png"
           style={{width: (!_.find(this.state.suggestions, ['name', this.state.value]) && this.state.value !== "") ? "25px" : "0px", cursor: "pointer"}}
-          title="Add this item to the database!" onClick={() => this.props.addItem(this.state.value)}/>
-        <input {...inputProps}/>
+          title="Add this item to the database!" onClick={() => this.props.addItem(this.state.value, this.state.left)}/>
+        <input id={this.props.left ? "search1" : "search2"} {...inputProps}/>
       </div>
     )
   },
@@ -88,6 +90,7 @@ var Searchbox = React.createClass({
         renderSuggestion={this.renderSuggestion}
         inputProps={inputProps}
         renderInputComponent={this.renderInputComponent}
+        onSuggestionSelected={this.onSuggestionSelected}
       />
     );
   }

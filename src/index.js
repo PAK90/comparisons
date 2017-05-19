@@ -39,6 +39,8 @@ var App = React.createClass({
   placeNewItem: function(isLeft, itemIndex) {
     if (itemIndex !== this.state.item1 && itemIndex !== this.state.item2) { // don't want duplicate items as pairs.
       isLeft ? this.setState({item1: itemIndex}, this.changeUrl(itemIndex, this.state.item2)) : this.setState({item2: itemIndex}, this.changeUrl(this.state.item1, itemIndex));
+      // now focus on the other search box, which we know due to isLeft.
+      document.getElementById(isLeft ? "search2" : "search1").focus();
     }
   },
 
@@ -69,7 +71,7 @@ var App = React.createClass({
         this.generateTwoRandoms(winner);
       }
       // with 95% chance, generate new pair if current pair has no mutual votes.
-      else if (perc < 0.95 && (
+      else if (perc < 0.75 && (
         (this.state.items[random1].pairs === undefined || this.state.items[random1].pairs[random2] === undefined) &&
         (this.state.items[random2].pairs === undefined || this.state.items[random2].pairs[random1] === undefined) ) )
       {
@@ -91,13 +93,6 @@ var App = React.createClass({
     console.log(item)
     var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
     setTimeout(function() {this.setState({paused: false});}.bind(this), 2000); // after 2 seconds, allow clicking.
-    // This gets the index of the item that was clicked.
-  /*  var clickUpdates = {};
-    clickUpdates['items/' + item + "/votesFor"] = this.state.items[item]["votesFor"] ? this.state.items[item]["votesFor"] + 1 : 1;
-    // to deal with new items: IF pairs AND pairs.key exist, write value else write 1.
-    clickUpdates['items/' + item + "/pairs/" + otherItem] = (this.state.items[item]["pairs"] && this.state.items[item]["pairs"][otherItem]) ? this.state.items[item]["pairs"][otherItem] + 1 : 1;
-    clickUpdates['items/' + otherItem + "/votesAgainst"] = this.state.items[otherItem]["votesAgainst"] ? this.state.items[otherItem]["votesAgainst"] + 1 : 1;
-    var status = firebase.database().ref().update(clickUpdates); // should really check this status.*/
 
     var itemRef = firebase.database().ref().child('items/' + item);
     var otherItemRef = firebase.database().ref().child('items/' + otherItem);
@@ -107,7 +102,7 @@ var App = React.createClass({
           fbitem.pairs[otherItem]++;
         }
         else if (fbitem.pairs) {
-          fbitem.pairs[otherItem] = 1;	
+          fbitem.pairs[otherItem] = 1;
         }
         else {
           fbitem.pairs = {};
@@ -137,8 +132,9 @@ var App = React.createClass({
     this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
   },
 
-  setItemsFromUrl: function() {
+  setItemsFromUrl: function(countRef) {
     // Get the current URL.
+    countRef.off();
     console.log(location.search);
     if (location.search) { // if we already have a url.
       const parsedHash = queryString.parse(location.search);
@@ -165,7 +161,7 @@ var App = React.createClass({
     countRef.on('value', snap => {
       this.setState({
         numberOfItems: snap.val()
-      }, location.search ? this.setItemsFromUrl : null);
+      }, location.search ? this.setItemsFromUrl(countRef) : null);
     });
     itemRef.on('value', snap => {
       this.setState({
@@ -173,12 +169,13 @@ var App = React.createClass({
       }, this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
     }); // no idea why this used to work with blank url and the itemCount callback, but it doesn't anymore.
     itemRef.off();
+    //countRef.off(); // disable listeners otherwise we get way too many setItemsFromUrl or generateTwoRandoms calls as FB updates data.
 
     // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
     this.bindAsObject(itemRef, "items");
   },
 
-  addItem: function(item) {
+  addItem: function(item, isLeft) {
     if (!item) return;
     // increment the item count, and add the item. simple!
     // as a backup, check for item name in existing items.
@@ -193,7 +190,7 @@ var App = React.createClass({
 
     var itemRef = firebase.database().ref().child('items').push({"name": item}).then((snap) => {
       console.log(snap.key);
-      this.setState({item1: snap.key}); // TODO: this will get updated once we have more than one searchbox.
+      this.setState(isLeft ? {"item1": snap.key} : {"item2": snap.key});
     });
   },
 
@@ -211,8 +208,9 @@ var App = React.createClass({
         <div className="content">
           <h1>Choose which is cooler!</h1>
           <p>Remember, there is no right answer.</p>
-          <div>
-            <Searchbox items={this.state.items} selected={this.placeNewItem} addItem={this.addItem} />
+          <div className="searchHolder">
+            <Searchbox items={this.state.items} left={true} selected={this.placeNewItem} addItem={this.addItem} />
+            <Searchbox items={this.state.items} left={false} selected={this.placeNewItem} addItem={this.addItem} />
           </div>
           <div className="thingHolder">
             <div onClick={() => this.handleThingClick(this.state.item1)}>
