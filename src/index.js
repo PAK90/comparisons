@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import * as firebase from 'firebase';
+const Rebase = require('re-base');
 import ReactFireMixin from 'reactfire';
 import styles from "./styles/customisations.scss";
 import Thing from './thing.js';
@@ -9,9 +10,15 @@ import Searchbox from './searchbox.js';
 const ProgressBar = require('react-progressbar.js');
 import sha1 from 'sha1';
 const base = require('1636');
+const Raven = require('raven-js');
 const queryString = require('query-string');
-//const Line = require('rc-progress').Line;
 
+Raven.config('https://5190a531264b4bdcbc75fd7e8e414914@sentry.io/98304', {
+  captureUnhandledRejections: true,
+  autoBreadcrumbs: {
+    console: false
+  }
+}).install();
 // Initialize Firebase
 const config = {
   apiKey: "AIzaSyDJ30_ONRYF61qsRl8l6BLDLTOh6gJV3u8",
@@ -19,7 +26,8 @@ const config = {
   databaseURL: "https://whatiscooler-69221.firebaseio.com",
   storageBucket: "whatiscooler-69221.appspot.com",
 };
-firebase.initializeApp(config);
+var fbApp = firebase.initializeApp(config);
+var rebase = Rebase.createClass(fbApp.database());
 
 var App = React.createClass({
   mixins: [ReactFireMixin],

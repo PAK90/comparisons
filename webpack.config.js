@@ -18,6 +18,11 @@ if (process.env.NODE_ENV !== 'production') {
   config.entry.push('webpack/hot/only-dev-server');
 }
 
+config.query = {
+    presets: ['es2015', 'react'],
+    plugins: ["transform-class-properties"]
+}
+
 config.entry.push(path.join(__dirname, './src/index.js')); // Your app's entry point
 
 config.output = {
@@ -27,6 +32,10 @@ config.output = {
 
 config.resolve = {
   extensions: ['', '.js', '.jsx']
+}
+
+config.node = {
+  fs: "empty"
 }
 
 config.module = {

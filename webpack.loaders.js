@@ -9,6 +9,10 @@ module.exports = [
 		loader: 'style-loader!css-loader!sass-loader'
 	},
 	{
+		test: /\.json$/,
+		loader: 'json5-loader'
+	},
+	{
 		test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
 		loader: "file"
 	},
