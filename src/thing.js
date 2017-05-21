@@ -1,15 +1,18 @@
+'use strict';
 import React from 'react';
 import axios from 'axios';
 require("./styles/customisations.scss");
+const PropTypes = require('prop-types');
 
-var Thing = React.createClass({
-	getInitialState: function() {
-      return {
-				gif: null
-      };
-  },
+class Thing extends React.Component{
+	constructor(props) {
+    super(props);
+    this.state = {
+			gif: null
+    };
+  }
 
-	componentWillReceiveProps: function(nextProps) {
+	componentWillReceiveProps(nextProps) {
 		// first if required to not blank on prop comparison. change gif even if it remains same object.
 		if (nextProps.thing && (this.props.thing !== nextProps.thing)) {
 			this.setState({gif: null});
@@ -19,17 +22,17 @@ var Thing = React.createClass({
 					this.setState({gif: response.data.data[Math.floor(Math.random() * 25)].images.fixed_height.url})
 				}.bind(this))
 			}
-	},
+	}
 
-	render: function() {
+	render() {
 		var overallPercent = "0%";
 		if (this.props.thing) {
 			// If the votes against are 0/falsey, it's 100% in favour.
-			overallPercent = (this.props.thing["votesAgainst"]) ? ((this.props.thing["votesFor"] * 100) / (this.props.thing["votesFor"] + this.props.thing["votesAgainst"])).toFixed(2) + "%"
+			overallPercent = (this.props.thing.votesAgainst) ? ((this.props.thing.votesFor * 100) / (this.props.thing.votesFor + this.props.thing.votesAgainst)).toFixed(2) + "%"
 				: "100%";
 
 			// ...except if there's also 0 votes in favour.
-			if ((!this.props.thing["votesFor"] && !this.props.thing["votesAgainst"]) || (!this.props.thing["votesFor"])) {
+			if ((!this.props.thing.votesFor && !this.props.thing.votesAgainst) || (!this.props.thing.votesFor)) {
 				overallPercent = '0%';
 			}
 		}
@@ -42,6 +45,11 @@ var Thing = React.createClass({
 			</div>
 		);
 	}
-})
+}
+
+Thing.propTypes = {
+  colour: PropTypes.string.isRequired,
+  thing: PropTypes.object // only reason it's not required is that on initial load 'thing' is null.
+}
 
 export default Thing;

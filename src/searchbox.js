@@ -1,3 +1,4 @@
+'use strict';
 import React from 'react';
 import _ from 'lodash';
 require("./styles/searchbox.scss");
@@ -5,6 +6,14 @@ import Autosuggest from 'react-autosuggest';
 const PropTypes = require('prop-types');
 
 const getSuggestionValue = suggestion => suggestion.name;
+
+const renderSuggestion = (suggestion) => (
+    <div>
+      <span>
+        {suggestion.name}
+      </span>
+    </div>
+)
 
 class Searchbox extends React.Component{
   constructor(props) {
@@ -15,7 +24,7 @@ class Searchbox extends React.Component{
     };
   }
 
-  getSuggestions(value) {
+  getSuggestions = (value) => {
     const inputValue = value.trim().toLowerCase();
     const inputLength = inputValue.length;
 
@@ -24,43 +33,32 @@ class Searchbox extends React.Component{
     );
   }
 
-  renderSuggestion (suggestion) {
-    // on click, it returns the key of the object it finds with the name prop of the suggestion. Icky, but better than nothing.
-    return (
-      <div>
-        <span>
-          {suggestion.name}
-        </span>
-      </div>
-    )
-  }
-
   onChange = (event, { newValue }) => {
    this.setState({
      value: newValue
    });
  };
 
-  onSuggestionsFetchRequested({ value }) {
+  onSuggestionsFetchRequested = ({ value }) => {
     this.setState({
       suggestions: this.getSuggestions(value)
     });
   }
 
   // Autosuggest will call this function every time you need to clear suggestions.
-  onSuggestionsClearRequested() {
+  onSuggestionsClearRequested = () => {
     this.setState({
       suggestions: []
     });
   }
 
-  onSuggestionSelected(event, suggestion) {
+  onSuggestionSelected = (event, suggestion) => {
     console.log(suggestion);
     // find the key of the object with the selected suggestion's name.
     this.props.selected(this.props.left ? true : false, _.findKey(this.props.items, ['name', suggestion.suggestionValue]));
   }
 
-  renderInputComponent(inputProps) {
+  renderInputComponent = (inputProps) => {
     return (
       <div className="inputContainer">
         <img className="icon" src="http://www.freeiconspng.com/uploads/add-list-icon--icon-search-engine-26.png"
@@ -85,17 +83,23 @@ class Searchbox extends React.Component{
     return (
       <Autosuggest
         suggestions={suggestions}
-        onSuggestionsFetchRequested={this.onSuggestionsFetchRequested.bind(this)}
-        onSuggestionsClearRequested={this.onSuggestionsClearRequested.bind(this)}
+        onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+        onSuggestionsClearRequested={this.onSuggestionsClearRequested}
         getSuggestionValue={getSuggestionValue}
-        renderSuggestion={this.renderSuggestion.bind(this)}
+        renderSuggestion={renderSuggestion}
         inputProps={inputProps}
-        onSuggestionSelected={this.onSuggestionSelected.bind(this)}
-        renderInputComponent={this.renderInputComponent.bind(this)}
+        onSuggestionSelected={this.onSuggestionSelected}
+        renderInputComponent={this.renderInputComponent}
       />
     );
   }
+}
 
+Searchbox.propTypes = {
+  left: PropTypes.bool.isRequired,
+  selected: PropTypes.func.isRequired,
+  addItem: PropTypes.func.isRequired,
+  items: PropTypes.object.isRequired
 }
 
 export default Searchbox;
