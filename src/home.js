@@ -1,6 +1,5 @@
 'use strict';
 import React from 'react';
-import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import * as firebase from 'firebase';
 const Rebase = require('re-base');
@@ -17,28 +16,18 @@ const ReactRouter = require('react-router-dom');
 var Router = ReactRouter.BrowserRouter;
 var Route = ReactRouter.Route;
 
-Raven.config('https://5190a531264b4bdcbc75fd7e8e414914@sentry.io/98304', {
+/*Raven.config('https://5190a531264b4bdcbc75fd7e8e414914@sentry.io/98304', {
   captureUnhandledRejections: true,
   autoBreadcrumbs: {
     console: false
   }
-}).install();
-// Initialize Firebase
-const config = {
-  apiKey: "AIzaSyDJ30_ONRYF61qsRl8l6BLDLTOh6gJV3u8",
-  authDomain: "whatiscooler-69221.firebaseapp.com",
-  databaseURL: "https://whatiscooler-69221.firebaseio.com",
-  storageBucket: "whatiscooler-69221.appspot.com",
-};
-var fbApp = firebase.initializeApp(config);
-var rebase = Rebase.createClass(fbApp.database());
+}).install();*/
 
 var Home = React.createClass({
   mixins: [ReactFireMixin],
 
   getInitialState: function() {
     return {
-      items: {},
       numberOfItems: 0,
       item1: 0,
       item2: 0,
@@ -72,11 +61,11 @@ var Home = React.createClass({
   },
 
   generateTwoRandoms: function(winner) {
-    if (this.state.numberOfItems !== 0 && !_.isEmpty(this.state.items)) {
+    if (this.state.numberOfItems !== 0 && !_.isEmpty(this.props.items)) {
       var random1 = (this.state.locked === 1 || winner === this.state.item1) ? this.state.item1
-        : Object.keys(this.state.items)[Math.floor(Math.random() * this.state.numberOfItems)];
+        : Object.keys(this.props.items)[Math.floor(Math.random() * this.state.numberOfItems)];
       var random2 = (this.state.locked === 2 || winner === this.state.item2) ? this.state.item2
-        : Object.keys(this.state.items)[Math.floor(Math.random() * this.state.numberOfItems)];
+        : Object.keys(this.props.items)[Math.floor(Math.random() * this.state.numberOfItems)];
       var perc = Math.random();
       console.log(perc);
       if (random1 === random2 || random1 === ".key" || random2 === ".key") { // goddamn object .key prop.
@@ -84,8 +73,8 @@ var Home = React.createClass({
       }
       // with 95% chance, generate new pair if current pair has no mutual votes.
       else if (perc < 0.85 && (
-        (this.state.items[random1].pairs === undefined || this.state.items[random1].pairs[random2] === undefined) &&
-        (this.state.items[random2].pairs === undefined || this.state.items[random2].pairs[random1] === undefined) ) )
+        (this.props.items[random1].pairs === undefined || this.props.items[random1].pairs[random2] === undefined) &&
+        (this.props.items[random2].pairs === undefined || this.props.items[random2].pairs[random1] === undefined) ) )
       {
         this.generateTwoRandoms(winner);
       }
@@ -144,14 +133,13 @@ var Home = React.createClass({
     this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
   },
 
-  setItemsFromUrl: function(countRef) {
+  setItemsFromUrl: function() {
     // Get the current URL.
-    countRef.off();
     console.log(location.search);
     if (location.search) { // if we already have a url.
       const parsedHash = queryString.parse(location.search);
-      this.setState({pair: parsedHash.p});
-      firebase.database().ref().child("pairs/" + parsedHash.p).on('value', snap => {
+      this.setState({pair: parsedHash.p}); // 'p' is the url code/prop/thing that holds the pair hash.
+      /*firebase.database().ref().child("pairs/" + parsedHash.p).on('value', snap => {
           console.log(snap.val());
           if (snap.val()) { // wrong hashes will result in null.
             this.setState({
@@ -160,38 +148,48 @@ var Home = React.createClass({
             });
           }
           else this.generateTwoRandoms();
+      })*/
+      this.props.rebase.fetch('pairs/' + parsedHash.p, {
+        context: this
+      }).then(data => {
+        if (data) {
+          this.setState({
+            item1: Object.keys(data)[0],
+            item2: Object.keys(data)[1]
+          });
+        }
+        else this.generateTwoRandoms();
+      }).catch(error => {
+        //handle error
+        console.log(error);
       })
     }
   },
 
   componentDidMount: function() {
     // Get the base 'items' database reference.
+
     var countRef = firebase.database().ref().child('itemCount');
-    var itemRef = firebase.database().ref().child('items');
-    // When anything in it changes, update the number of items.
-    // TODO: change this to on children changing.
-    countRef.on('value', snap => {
+    // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
+    //this.bindAsObject(itemRef, "items");
+    /*countRef.on('value', snap => {
       this.setState({
         numberOfItems: snap.val()
-      }, location.search ? this.setItemsFromUrl(countRef) : null);
+      }, () => location.search ? this.setItemsFromUrl(countRef) : this.generateTwoRandoms());
+    });*/
+    this.props.rebase.bindToState('itemCount', {
+      context: this,
+      state: 'numberOfItems',
+      then: () => (location.search ? this.setItemsFromUrl() : this.generateTwoRandoms())
     });
-    itemRef.on('value', snap => {
-      this.setState({
-        items: snap.val()
-      }, this.generateTwoRandoms); // generateTwoRandoms is called as the callback to the setState, so it doesn't do it with null data.
-    }); // no idea why this used to work with blank url and the itemCount callback, but it doesn't anymore.
-    itemRef.off();
-    //countRef.off(); // disable listeners otherwise we get way too many setItemsFromUrl or generateTwoRandoms calls as FB updates data.
-
-    // Don't want to have to go through an object, so bind the items as an array. This also updates automatically (I think)
-    this.bindAsObject(itemRef, "items");
+    // we can immediately call generateTwoRandoms because items are passed as a prop!
   },
 
   addItem: function(item, isLeft) {
     if (!item) return;
     // increment the item count, and add the item. simple!
     // as a backup, check for item name in existing items.
-    if (_.filter(this.state.items, ['name', item]).length) return;
+    if (_.filter(this.props.items, ['name', item]).length) return;
     var countRef = firebase.database().ref().child('itemCount');
     countRef.transaction(function(count) {
       if (count) {
@@ -200,36 +198,33 @@ var Home = React.createClass({
       return count;
     }).then((snap) => {console.log(snap); });
 
-    var itemRef = firebase.database().ref().child('items').push({"name": item}).then((snap) => {
+    firebase.database().ref().child('items').push({"name": item}).then((snap) => {
       console.log(snap.key);
       this.setState(isLeft ? {"item1": snap.key} : {"item2": snap.key});
     });
   },
 
   render: function() {
-    var rightVotes = (this.state.items[this.state.item1] && this.state.items[this.state.item2]["pairs"]) ? this.state.items[this.state.item2]["pairs"][this.state.item1] : 0;
-    var leftVotes = (this.state.items[this.state.item2] && this.state.items[this.state.item1]["pairs"]) ? this.state.items[this.state.item1]["pairs"][this.state.item2] : 0;
+    var rightVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item2]["pairs"]) ? this.props.items[this.state.item2]["pairs"][this.state.item1] : 0;
+    var leftVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item1]["pairs"]) ? this.props.items[this.state.item1]["pairs"][this.state.item2] : 0;
     var votePercent = (rightVotes && leftVotes) ? leftVotes / (rightVotes + leftVotes) * 100 : leftVotes ? 100 : 0;
     console.log(votePercent);
     var Line = ProgressBar.Line;
     return (
       <div className="body">
-        <div className="header">
-          <h3>WhatIsCooler.com</h3>
-        </div>
         <div className="content">
           <h1>Choose which is cooler!</h1>
           <p>Remember, there is no right answer.</p>
           <div className="searchHolder">
-            <Searchbox items={this.state.items} left={true} selected={this.placeNewItem} addItem={this.addItem} />
-            <Searchbox items={this.state.items} left={false} selected={this.placeNewItem} addItem={this.addItem} />
+            <Searchbox items={this.props.items} left={true} selected={this.placeNewItem} addItem={this.addItem} />
+            <Searchbox items={this.props.items} left={false} selected={this.placeNewItem} addItem={this.addItem} />
           </div>
           <div className="thingHolder">
             <div onClick={() => this.handleThingClick(this.state.item1)}>
-              <Thing thing={this.state.items[this.state.item1]} colour={styles.leftColour}  />
+              <Thing thing={this.props.items[this.state.item1]} colour={styles.leftColour}  />
             </div>
             <div onClick={() => this.handleThingClick(this.state.item2)}>
-              <Thing thing={this.state.items[this.state.item2]} colour={styles.rightColour}  />
+              <Thing thing={this.props.items[this.state.item2]} colour={styles.rightColour}  />
             </div>
           </div>
           <div className="progressContainer">
