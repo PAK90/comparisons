@@ -43,7 +43,7 @@ config.module = {
 }
 
 config.devServer = {
-  contentBase: "./public",
+  contentBase: "/",
   noInfo: true, //  --no-info option
   hot: true,
   inline: true,
