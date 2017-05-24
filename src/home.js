@@ -2,7 +2,6 @@
 import React from 'react';
 import _ from 'lodash';
 import * as firebase from 'firebase';
-const Rebase = require('re-base');
 import ReactFireMixin from 'reactfire';
 import styles from "./styles/customisations.scss";
 import Thing from './thing.js';
@@ -13,8 +12,6 @@ const base = require('1636');
 const Raven = require('raven-js');
 const queryString = require('query-string');
 const ReactRouter = require('react-router-dom');
-var Router = ReactRouter.BrowserRouter;
-var Route = ReactRouter.Route;
 
 /*Raven.config('https://5190a531264b4bdcbc75fd7e8e414914@sentry.io/98304', {
   captureUnhandledRejections: true,
@@ -22,14 +19,6 @@ var Route = ReactRouter.Route;
     console: false
   }
 }).install();*/
-/*const config = {
-  apiKey: "AIzaSyDJ30_ONRYF61qsRl8l6BLDLTOh6gJV3u8",
-  authDomain: "whatiscooler-69221.firebaseapp.com",
-  databaseURL: "https://whatiscooler-69221.firebaseio.com",
-  storageBucket: "whatiscooler-69221.appspot.com",
-};
-var fbApp = firebase.initializeApp(config); // this initializes fb for all components, not just this one, it seems.
-var rebase = Rebase.createClass(fbApp.database());*/
 
 var Home = React.createClass({
   mixins: [ReactFireMixin],
@@ -82,8 +71,8 @@ var Home = React.createClass({
       }
       // with 95% chance, generate new pair if current pair has no mutual votes.
       else if (perc < 0.85 && (
-        (this.props.items[random1].pairs === undefined || this.props.items[random1].pairs[random2] === undefined) &&
-        (this.props.items[random2].pairs === undefined || this.props.items[random2].pairs[random1] === undefined) ) )
+        (this.props.items[random1].pairsFor === undefined || this.props.items[random1].pairsFor[random2] === undefined) &&
+        (this.props.items[random2].pairsFor === undefined || this.props.items[random2].pairsFor[random1] === undefined) ) )
       {
         this.generateTwoRandoms(winner);
       }
@@ -95,6 +84,7 @@ var Home = React.createClass({
         });
       }
     }
+    else setTimeout(this.generateTwoRandoms.bind(this), 50); // this is annoying but has to be done, for now.
   },
 
   handleThingClick: function(item) {
@@ -108,15 +98,15 @@ var Home = React.createClass({
     var otherItemRef = firebase.database().ref().child('items/' + otherItem);
     itemRef.transaction(function(fbitem) {
       if (fbitem) {
-        if (fbitem.pairs && fbitem.pairs[otherItem]) {
-          fbitem.pairs[otherItem]++;
+        if (fbitem.pairsFor && fbitem.pairsFor[otherItem]) {
+          fbitem.pairsFor[otherItem]++;
         }
-        else if (fbitem.pairs) {
-          fbitem.pairs[otherItem] = 1;
+        else if (fbitem.pairsFor) {
+          fbitem.pairsFor[otherItem] = 1;
         }
         else {
-          fbitem.pairs = {};
-          fbitem.pairs[otherItem] = 1;
+          fbitem.pairsFor = {};
+          fbitem.pairsFor[otherItem] = 1;
         }
         if (fbitem.votesFor) {
           fbitem.votesFor++;
@@ -127,8 +117,19 @@ var Home = React.createClass({
       }
       return fbitem;
     })
+
     otherItemRef.transaction(function(fbotherItem) {
       if (fbotherItem) {
+        if (fbotherItem.pairsAgainst && fbotherItem.pairsAgainst[item]) {
+          fbotherItem.pairsAgainst[item]++;
+        }
+        else if (fbotherItem.pairsAgainst) {
+          fbotherItem.pairsAgainst[item] = 1;
+        }
+        else {
+          fbotherItem.pairsAgainst = {};
+          fbotherItem.pairsAgainst[item] = 1;
+        }
         if (fbotherItem.votesAgainst) {
           fbotherItem.votesAgainst++;
         }
@@ -166,16 +167,12 @@ var Home = React.createClass({
   },
 
   componentDidMount: function() {
-    /*this.props.rebase.bindToState('items', {
-      context: this,
-      state: 'items'
-    })*/
     this.props.rebase.bindToState('itemCount', {
       context: this,
       state: 'numberOfItems',
       then: () => (location.search ? this.setItemsFromUrl() : this.generateTwoRandoms())
     });
-    // we can immediately call generateTwoRandoms because items are passed as a prop!
+    // we can immediately call generateTwoRandoms because items are passed as a prop! actually not true.
   },
 
   addItem: function(item, isLeft) {
@@ -202,8 +199,8 @@ var Home = React.createClass({
   },
 
   render: function() {
-    var rightVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item2]["pairs"]) ? this.props.items[this.state.item2]["pairs"][this.state.item1] : 0;
-    var leftVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item1]["pairs"]) ? this.props.items[this.state.item1]["pairs"][this.state.item2] : 0;
+    var rightVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item2]["pairsFor"]) ? this.props.items[this.state.item2]["pairsFor"][this.state.item1] : 0;
+    var leftVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item1]["pairsFor"]) ? this.props.items[this.state.item1]["pairsFor"][this.state.item2] : 0;
     var votePercent = (rightVotes && leftVotes) ? leftVotes / (rightVotes + leftVotes) * 100 : leftVotes ? 100 : 0;
     console.log(votePercent);
     var Line = ProgressBar.Line;

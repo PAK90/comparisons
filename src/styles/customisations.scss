@@ -28,6 +28,22 @@ body {
   margin-left: 25%;
 }
 
+.popular-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  max-width: 1200px;
+}
+
+.popular-item {
+  margin: 20px;
+  text-align: center;
+}
+
+.space-list-items {
+  margin-bottom: 7px;
+}
+
 .header {
 	padding: 5px;
 	top: 0;
@@ -44,6 +60,10 @@ body {
 
 a {
   text-decoration: none;
+}
+
+ul {
+  padding: 0;
 }
 
 li {

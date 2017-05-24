@@ -4,6 +4,7 @@ var Router = ReactRouter.BrowserRouter;
 var Route = ReactRouter.Route;
 var Switch = ReactRouter.Switch;
 var Home = require('./home');
+var Browse = require('./browse');
 var Nav = require('./nav');
 const Rebase = require('re-base');
 import * as firebase from 'firebase';
@@ -35,7 +36,21 @@ class App extends React.Component {
 
   render() {
     return (
-      <Home rebase={rebase} items={this.state.items} />
+      <Router>
+        <div className='container'>
+          <div className="header">
+            <h3>WhatIsCooler</h3>
+            <Nav/>
+          </div>
+          <Switch>
+            <Route exact path='/' render={() => <Home rebase={rebase} items={this.state.items}/>} />
+            <Route path='/browse' render={() => <Browse items={Object.values(this.state.items)}/>} />
+            <Route render={function () {
+              return <p>Not Found</p>
+            }} />
+          </Switch>
+        </div>
+      </Router>
     )
   }
 }
