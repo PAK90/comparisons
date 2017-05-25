@@ -15,15 +15,32 @@ const calcPercentage = (item) => {
   return overallPercent;
 }
 
-const calcMatchups = (item) => {
+const calcAllMatchups = (item) => {
   if (!item.pairsFor && item.pairsAgainst) return Object.keys(item.pairsAgainst).length;
   else if (item.pairsFor && !item.pairsAgainst) return Object.keys(item.pairsFor).length;
   else if (!item.pairsFor && !item.pairsAgainst) return 0;
   else {
     var For = Object.keys(item.pairsFor);
     var Against = Object.keys(item.pairsAgainst);
-    // now count unique number of keys
+    // now count union number of keys
     return _.union(For, Against).length;
+  }
+}
+
+const calcWinningMatchups = (item) => {
+  if (!item.pairsFor) return 0;
+  else if (item.pairsFor && !item.pairsAgainst) return Object.keys(item.pairsFor).length;
+  else {
+    var For = Object.keys(item.pairsFor);
+    var Against = Object.keys(item.pairsAgainst);
+    // for matchups this is winning, count pairsFor that don't exist in pairsAgainst,
+    // and ones that exist in both but are higher in pairsFor.
+    var totalFor = 0;
+    _.forEach(For, (key) => {
+      if (!item.pairsAgainst[key]) totalFor++;
+      else if (item.pairsFor[key] > item.pairsAgainst[key]) totalFor++;
+    })
+    return totalFor;
   }
 }
 
@@ -39,8 +56,8 @@ const ItemGrid = (props) => {
             <div className='popular-rank'>#{index + 1}</div>
             <ul className='space-list-items'>
               <li><b>{item.name}</b></li>
-              <li>{(item.pairsFor ? Object.keys(item.pairsFor).length : 0) +
-                    " of " + calcMatchups(item) + " matchups won so far"}</li>
+              <li>{"Winning in " + calcWinningMatchups(item) +
+                    " of " + calcAllMatchups(item) + " matchups so far"}</li>
               <li>{(calcPercentage(item) * 100).toFixed(1)}% success rate</li>
               <li><Circle progress={calcPercentage(item)}
                     initialAnimate={true}

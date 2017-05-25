@@ -27,7 +27,8 @@ config.entry.push(path.join(__dirname, './src/index.js')); // Your app's entry p
 
 config.output = {
   path: path.join(__dirname, 'public'),
-  filename: 'bundle.js'
+  filename: 'bundle.js',
+  publicPath: '/'
 }
 
 config.resolve = {
@@ -48,7 +49,8 @@ config.devServer = {
   hot: true,
   inline: true,
   port: PORT,
-  host: HOST
+  host: HOST,
+  historyApiFallback: true
 }
 
 config.plugins = [

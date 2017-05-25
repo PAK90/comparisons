@@ -64,7 +64,7 @@ class Searchbox extends React.Component{
         <img className="icon" src="http://www.freeiconspng.com/uploads/add-list-icon--icon-search-engine-26.png"
           style={{width: (!_.find(this.state.suggestions, ['name', this.state.value]) && this.state.value !== "") ? "25px" : "0px", cursor: "pointer"}}
           title="Add this item to the database!" onClick={() => this.props.addItem(this.state.value, this.props.left)}/>
-        <input id={this.props.left ? "search1" : "search2"} {...inputProps}/>
+        <input maxLength={30} id={this.props.left ? "search1" : "search2"} {...inputProps}/>
       </div>
     )
   }

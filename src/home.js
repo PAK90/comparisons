@@ -48,8 +48,9 @@ var Home = React.createClass({
     var hash = sha1(pair[0].toString() + ',' + pair[1].toString()); // TODO: sort in increasing order so they're the same.
     hash = base.to36(hash.slice(0, 9))
     // now update the url silently, without reloading the page.
-    var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
-    window.history.pushState({path: newurl}, '', newurl);
+    //var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
+    //window.history.pushState({path: newurl}, '', newurl);
+    this.props.history.push('/?p=' + hash)
     console.log(hash);
     // also update firebase with the new pair.
     var pairUpdates = {};
@@ -152,7 +153,7 @@ var Home = React.createClass({
       this.props.rebase.fetch('pairs/' + parsedHash.p, {
         context: this
       }).then(data => {
-        if (data) {
+        if (!_.isEmpty(data)) {
           this.setState({
             item1: Object.keys(data)[0],
             item2: Object.keys(data)[1]
@@ -188,10 +189,6 @@ var Home = React.createClass({
       return count;
     }).then((snap) => {console.log(snap); });
 
-    /*firebase.database().ref().child('items').push({"name": item}).then((snap) => {
-      console.log(snap.key);
-      this.setState(isLeft ? {"item1": snap.key} : {"item2": snap.key});
-    });*/
     var newItem = this.props.rebase.push('items', {
       data: {name: item}
     });

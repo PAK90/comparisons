@@ -3,6 +3,9 @@ var ReactRouter = require('react-router-dom');
 var Router = ReactRouter.BrowserRouter;
 var Route = ReactRouter.Route;
 var Switch = ReactRouter.Switch;
+//import {browserHistory} from 'react-router';
+var browserHistory = ReactRouter.BrowserHistory;
+import _ from 'lodash';
 var Home = require('./home');
 var Browse = require('./browse');
 var Nav = require('./nav');
@@ -36,15 +39,15 @@ class App extends React.Component {
 
   render() {
     return (
-      <Router>
+      <Router history={browserHistory}>
         <div className='container'>
           <div className="header">
             <h3>WhatIsCooler</h3>
             <Nav/>
           </div>
           <Switch>
-            <Route exact path='/' render={() => <Home rebase={rebase} items={this.state.items}/>} />
-            <Route path='/browse' render={() => <Browse items={Object.values(this.state.items)}/>} />
+            <Route exact path='/' render={(props) => <Home {...props} rebase={rebase} items={this.state.items}/>} />
+            <Route path='/browse' render={() => <Browse items={_.values(this.state.items)}/>} />
             <Route render={function () {
               return <p>Not Found</p>
             }} />
