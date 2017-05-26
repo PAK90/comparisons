@@ -16,10 +16,10 @@ class Thing extends React.Component{
 		// first if required to not blank on prop comparison. change gif even if it remains same object.
 		if (nextProps.thing && (this.props.thing !== nextProps.thing)) {
 			this.setState({gif: null});
-			axios.get('https://api.giphy.com/v1/gifs/search?q=' + nextProps.thing.name.replace(/ /g, "+") + '&api_key=dc6zaTOxFJmzC&limit=25')
+			axios.get('https://api.giphy.com/v1/gifs/search?q=' + nextProps.thing.name.replace(/ /g, "+") + '&rating=pg-13&api_key=dc6zaTOxFJmzC&limit=25&sort=relevant')
 				.then(function(response) {
 					console.log(response);
-					this.setState({gif: response.data.data[Math.floor(Math.random() * 25)].images.fixed_height.url})
+					this.setState({gif: response.data.data[Math.floor(Math.random() * response.data.data.length)].images.fixed_height.url})
 				}.bind(this))
 			}
 	}

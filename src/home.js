@@ -62,16 +62,16 @@ var Home = React.createClass({
   generateTwoRandoms: function(winner) {
     if (this.state.numberOfItems !== 0 && !_.isEmpty(this.props.items)) {
       var random1 = (this.state.locked === 1 || winner === this.state.item1) ? this.state.item1
-        : Object.keys(this.props.items)[Math.floor(Math.random() * this.state.numberOfItems)];
+        : _.keys(this.props.items)[Math.floor(Math.random() * this.state.numberOfItems)];
       var random2 = (this.state.locked === 2 || winner === this.state.item2) ? this.state.item2
-        : Object.keys(this.props.items)[Math.floor(Math.random() * this.state.numberOfItems)];
+        : _.keys(this.props.items)[Math.floor(Math.random() * this.state.numberOfItems)];
       var perc = Math.random();
       console.log(perc);
       if (random1 === random2 || random1 === ".key" || random2 === ".key" || random1 === undefined || random2 === undefined) { // goddamn object .key prop.
         this.generateTwoRandoms(winner);
       }
       // with 95% chance, generate new pair if current pair has no mutual votes.
-      else if (perc < 0.85 && (
+      else if (perc < 0.75 && (
         (this.props.items[random1].pairsFor === undefined || this.props.items[random1].pairsFor[random2] === undefined) &&
         (this.props.items[random2].pairsFor === undefined || this.props.items[random2].pairsFor[random1] === undefined) ) )
       {

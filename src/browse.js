@@ -48,6 +48,8 @@ const ItemGrid = (props) => {
   var sortedItems = _.orderBy(props.items, (item) => {
     return calcPercentage(item);
   }, ['desc']); // TODO; multiple sorting options.
+  // take only first 100 items from sorted list.
+  sortedItems = _.take(sortedItems, 100);
   return (
     <ul className='popular-list'>
       {sortedItems.map(function (item, index) {

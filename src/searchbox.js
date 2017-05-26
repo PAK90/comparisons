@@ -28,7 +28,7 @@ class Searchbox extends React.Component{
     const inputValue = value.trim().toLowerCase();
     const inputLength = inputValue.length;
 
-    return inputLength === 0 ? [] : Object.values(this.props.items).filter(item =>
+    return inputLength === 0 ? [] : _.values(this.props.items).filter(item =>
       item.name.toLowerCase().slice(0, inputLength) === inputValue
     );
   }
