@@ -17,6 +17,12 @@ body {
   margin: 0px;
 }
 
+.avatar {
+  max-width: 50px;
+  max-height: 50px;
+  border-radius: 50%;
+}
+
 .content {
   position: relative;
   left: 25%;

@@ -41,8 +41,16 @@ class App extends React.Component {
       items: {},
       modalIsOpen: false,
       loggedIn: false,
-      currentUser: null
+      currentUser: null,
+      currentUserData: null
     };
+  }
+
+  componentDidMount () {
+    rebase.bindToState('items', {
+      context: this,
+      state: 'items'
+    });
 
     this.ui = new firebaseui.auth.AuthUI(firebase.auth());
     this.uiConfig = {
@@ -57,7 +65,7 @@ class App extends React.Component {
       'signInFlow': 'popup',
       callbacks: {
         signInSuccess: function(currentUser, credential, redirectUrl) {
-          alert("Signed in as "+currentUser + " with credential " + credential);
+          //alert("Signed in as "+currentUser + " with credential " + credential);
           this.setState({"modalIsOpen": false});
         }.bind(this)
       }
@@ -65,21 +73,40 @@ class App extends React.Component {
 
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
-        this.setState({"loggedIn": true, "currentUser": user.uid})
-        alert("Logged in!")
+        this.setState({"loggedIn": true, "currentUser": user})
+        //alert("Logged in!")
+        rebase.fetch('users/' + user.uid, {
+          context: this,
+        }).then(data => {
+          if (!_.isEmpty(data)) {
+            console.log(data);
+            rebase.bindToState('users/' + user.uid, {
+              context: this,
+              state: 'currentUserData'
+            });
+          }
+          else {
+            // write new default user data.
+            rebase.post('users/' + user.uid, {
+              data: {points: 500}
+            }).then(() => {
+              this.boundUserData = rebase.bindToState('users/' + user.uid, {
+                context: this,
+                state: 'currentUserData'
+              });
+            });
+          }
+        });
       }
       else {
         this.setState({"loggedIn": false, "currentUser": null})
-        alert("Logged out!")
+        //alert("Logged out!")
+        if (this.boundUserData) {
+          rebase.removeBinding(this.boundUserData);
+        }
+        this.setState({'currentUserData': null});
       }
     }.bind(this));
-  }
-
-  componentDidMount () {
-    rebase.bindToState('items', {
-      context: this,
-      state: 'items'
-    });
   }
 
   openModal = () => {
@@ -107,6 +134,9 @@ class App extends React.Component {
             <h3>WhatIsCooler</h3>
             <Nav/>
             <button onClick={this.openModal}>{!this.state.loggedIn ? "Login" : "Log out"}</button>
+            <img src={this.state.currentUser && this.state.currentUser.photoURL} className="avatar" />
+            <span>{(this.state.currentUser && this.state.currentUserData) &&
+              (this.state.currentUser.displayName + ': ' + this.state.currentUserData.points)}</span>
             <Modal
               isOpen={this.state.modalIsOpen}
               onAfterOpen={this.afterOpenModal}
@@ -117,7 +147,7 @@ class App extends React.Component {
             </Modal>
           </div>
           <Switch>
-            <Route exact path='/' render={(props) => <Home {...props} rebase={rebase} items={this.state.items}/>} />
+            <Route exact path='/' render={(props) => <Home {...props} rebase={rebase} items={this.state.items} user={this.state.currentUser}/>} />
             <Route path='/browse' render={() => <Browse items={_.values(this.state.items)}/>} />
             <Route render={function () {
               return <p>Not Found</p>

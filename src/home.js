@@ -89,7 +89,7 @@ var Home = React.createClass({
   },
 
   handleThingClick: function(item) {
-    if (this.state.paused) return; // spam prevention!
+    if (this.state.paused || !this.props.user) return; // spam prevention! also logged-in checking.
     this.setState({paused: true}); // if we got in, prevent clicking.
     console.log(item)
     var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
@@ -97,6 +97,7 @@ var Home = React.createClass({
 
     var itemRef = firebase.database().ref().child('items/' + item);
     var otherItemRef = firebase.database().ref().child('items/' + otherItem);
+    var userRef = firebase.database().ref().child('users/' + this.props.user.uid);
     itemRef.transaction(function(fbitem) {
       if (fbitem) {
         if (fbitem.pairsFor && fbitem.pairsFor[otherItem]) {
@@ -139,6 +140,13 @@ var Home = React.createClass({
         }
       }
       return fbotherItem;
+    })
+
+    userRef.transaction(function(user) {
+      if (user) {
+        user.points++; // simple for now, increment point count.
+      }
+      return user;
     })
     // Generate a new pair.
     this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
