@@ -147,7 +147,12 @@ class App extends React.Component {
             </Modal>
           </div>
           <Switch>
-            <Route exact path='/' render={(props) => <Home {...props} rebase={rebase} items={this.state.items} user={this.state.currentUser}/>} />
+            <Route exact path='/' render={(props) => <Home
+              {...props}
+              rebase={rebase}
+              items={this.state.items}
+              user={this.state.currentUser}
+              userData={this.state.currentUserData}/>} />
             <Route path='/browse' render={() => <Browse items={_.values(this.state.items)}/>} />
             <Route render={function () {
               return <p>Not Found</p>

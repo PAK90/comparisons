@@ -185,7 +185,7 @@ var Home = React.createClass({
   },
 
   addItem: function(item, isLeft) {
-    if (!item) return;
+    if (!item || !this.props.user || this.props.userData.points < 100) return;
     // increment the item count, and add the item. simple!
     // as a backup, check for item name in existing items.
     if (_.filter(this.props.items, ['name', item]).length) return;
@@ -196,6 +196,15 @@ var Home = React.createClass({
       }
       return count;
     }).then((snap) => {console.log(snap); });
+
+    // subtract 100 points from user.
+    var userRef = firebase.database().ref().child('users/' + this.props.user.uid);
+    userRef.transaction(function(user) {
+      if (user) {
+        user.points = user.points - 100; // simple for now, increment point count.
+      }
+      return user;
+    })
 
     var newItem = this.props.rebase.push('items', {
       data: {name: item}
