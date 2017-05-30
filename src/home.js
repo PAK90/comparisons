@@ -26,9 +26,10 @@ var Home = React.createClass({
   getInitialState: function() {
     return {
       numberOfItems: 0,
-      items: {},
       item1: 0,
       item2: 0,
+      pair: null,
+      //pairData: null,
       keepWinner: false,
       locked: false, // false, 1 or 2. denotes which item won't change when generating new pair.
       paused: false // the N second timer to prevent spammy voting.
@@ -45,18 +46,27 @@ var Home = React.createClass({
 
   changeUrl: function(item1, item2) {
     var pair = [item1, item2].sort();
-    var hash = sha1(pair[0].toString() + ',' + pair[1].toString()); // TODO: sort in increasing order so they're the same.
+    var hash = sha1(pair[0].toString() + ',' + pair[1].toString());
     hash = base.to36(hash.slice(0, 9))
     // now update the url silently, without reloading the page.
-    //var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?p=' + hash;
-    //window.history.pushState({path: newurl}, '', newurl);
     this.props.history.push('/?p=' + hash)
     console.log(hash);
+    this.setState({pair: hash});
     // also update firebase with the new pair.
-    var pairUpdates = {};
-    pairUpdates['pairs/' + hash + '/' + item1] = true;
-    pairUpdates['pairs/' + hash + '/' + item2] = true;
-    var status = firebase.database().ref().update(pairUpdates); // should really check this status.
+    this.props.rebase.fetch('pairs/' + hash, {
+      context: this
+    }).then(data => {
+      if (_.isEmpty(data)) { // if it's a new pair, load new pair. if it's not, leave it.
+        var newPair = {};
+        newPair[this.state.item1] = true;
+        newPair[this.state.item2] = true;
+        this.props.rebase.post('pairs/' + hash, {
+          data: newPair
+        })
+      }
+    }).catch(error => {
+      console.log(error);
+    })
   },
 
   generateTwoRandoms: function(winner) {
@@ -98,6 +108,45 @@ var Home = React.createClass({
     var itemRef = firebase.database().ref().child('items/' + item);
     var otherItemRef = firebase.database().ref().child('items/' + otherItem);
     var userRef = firebase.database().ref().child('users/' + this.props.user.uid);
+
+    // get the new key immediately.
+    var newVote = this.props.rebase.push('votes', {
+      data: {left: this.state.item1, right: this.state.item2, voter: this.props.user.uid, voted: (new Date).getTime(),
+              winner: item}
+    });
+
+    userRef.transaction(function(user) {
+      if (user) {
+        user.points++; // increment point count.
+        if (!user.votes) {
+          user.votes = {};
+        }
+        user.votes[newVote.key] = true;
+        // check if user voted on currently winning one.
+        var votedVotes = (this.props.items[item] && this.props.items[otherItem]["pairsFor"]) ? this.props.items[otherItem]["pairsFor"][item] : 0;
+        var notVotedVotes = (this.props.items[otherItem] && this.props.items[item]["pairsFor"]) ? this.props.items[item]["pairsFor"][otherItem] : 0;
+
+        if (votedVotes === 0 && notVotedVotes === 0) {
+          if (!user.firstVote) user.firstVote = 1;
+          else user.firstVote++;
+        }
+        else if (votedVotes === notVotedVotes) {
+          if (!user.tieVote) user.tieVote = 1;
+          else user.tieVote++;
+        }
+        else if (votedVotes > notVotedVotes) {
+          if (!user.guessRight) user.guessRight = 1;
+          else user.guessRight++;
+        }
+        else if (votedVotes < notVotedVotes) {
+          if (!user.guessWrong) user.guessWrong = 1;
+          else user.guessWrong++;
+        }
+        else console.log("voted for " + item + ': ' + votedVotes + ", " + notVotedVotes);
+      }
+      return user;
+    }.bind(this))
+
     itemRef.transaction(function(fbitem) {
       if (fbitem) {
         if (fbitem.pairsFor && fbitem.pairsFor[otherItem]) {
@@ -142,12 +191,6 @@ var Home = React.createClass({
       return fbotherItem;
     })
 
-    userRef.transaction(function(user) {
-      if (user) {
-        user.points++; // simple for now, increment point count.
-      }
-      return user;
-    })
     // Generate a new pair.
     this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
   },
@@ -164,7 +207,8 @@ var Home = React.createClass({
         if (!_.isEmpty(data)) {
           this.setState({
             item1: Object.keys(data)[0],
-            item2: Object.keys(data)[1]
+            item2: Object.keys(data)[1],
+            //pairData: data
           });
         }
         else this.generateTwoRandoms();
@@ -197,19 +241,24 @@ var Home = React.createClass({
       return count;
     }).then((snap) => {console.log(snap); });
 
-    // subtract 100 points from user.
+    // get the new key immediately, then push it to state.
+    var newItem = this.props.rebase.push('items', {
+      data: {name: item, addedBy: this.props.user.uid, added: (new Date).getTime(), mod: 1}
+    });
+    this.setState(isLeft ? {"item1": newItem.key} : {"item2": newItem.key});
+
+    // subtract 100 points from user. also add new item id to their items list.
     var userRef = firebase.database().ref().child('users/' + this.props.user.uid);
     userRef.transaction(function(user) {
       if (user) {
         user.points = user.points - 100; // simple for now, increment point count.
+        if (!user.items) {
+          user.items = {};
+        }
+        user.items[newItem.key] = true;
       }
       return user;
     })
-
-    var newItem = this.props.rebase.push('items', {
-      data: {name: item}
-    });
-    this.setState(isLeft ? {"item1": newItem.key} : {"item2": newItem.key});
   },
 
   render: function() {
