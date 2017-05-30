@@ -123,8 +123,10 @@ var Home = React.createClass({
         }
         user.votes[newVote.key] = true;
         // check if user voted on currently winning one.
-        var votedVotes = (this.props.items[item] && this.props.items[otherItem]["pairsFor"]) ? this.props.items[otherItem]["pairsFor"][item] : 0;
-        var notVotedVotes = (this.props.items[otherItem] && this.props.items[item]["pairsFor"]) ? this.props.items[item]["pairsFor"][otherItem] : 0;
+        var votedVotes = (this.props.items[item] && this.props.items[item]["pairsFor"]) ? this.props.items[item]["pairsFor"][otherItem] : 0;
+        var notVotedVotes = (this.props.items[otherItem] && this.props.items[otherItem]["pairsFor"]) ? this.props.items[otherItem]["pairsFor"][item] : 0;
+        if (!votedVotes) votedVotes = 0;
+        if (!notVotedVotes) notVotedVotes = 0;
 
         if (votedVotes === 0 && notVotedVotes === 0) {
           if (!user.firstVote) user.firstVote = 1;
@@ -231,8 +233,8 @@ var Home = React.createClass({
   addItem: function(item, isLeft) {
     if (!item || !this.props.user || this.props.userData.points < 100) return;
     // increment the item count, and add the item. simple!
-    // as a backup, check for item name in existing items.
-    if (_.filter(this.props.items, ['name', item]).length) return;
+    // as a backup, check for item name in existing items OR if item is just whitespace.
+    if (_.filter(this.props.items, ['name', item]).length || _.trim(item).length === 0) return;
     var countRef = firebase.database().ref().child('itemCount');
     countRef.transaction(function(count) {
       if (count) {
@@ -245,7 +247,6 @@ var Home = React.createClass({
     var newItem = this.props.rebase.push('items', {
       data: {name: item, addedBy: this.props.user.uid, added: (new Date).getTime(), mod: 1}
     });
-    this.setState(isLeft ? {"item1": newItem.key} : {"item2": newItem.key});
 
     // subtract 100 points from user. also add new item id to their items list.
     var userRef = firebase.database().ref().child('users/' + this.props.user.uid);
@@ -259,11 +260,13 @@ var Home = React.createClass({
       }
       return user;
     })
+    this.setState(isLeft ? {"item1": newItem.key} : {"item2": newItem.key});
+    this.changeUrl(newItem.key, isLeft ? this.state.item2 : this.state.item1);
   },
 
   render: function() {
-    var rightVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item2]["pairsFor"]) ? this.props.items[this.state.item2]["pairsFor"][this.state.item1] : 0;
-    var leftVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item1]["pairsFor"]) ? this.props.items[this.state.item1]["pairsFor"][this.state.item2] : 0;
+    var leftVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item1]["pairsFor"]) ? this.props.items[this.state.item1]["pairsFor"][this.state.item2] : 0;
+    var rightVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item2]["pairsFor"]) ? this.props.items[this.state.item2]["pairsFor"][this.state.item1] : 0;
     var votePercent = (rightVotes && leftVotes) ? leftVotes / (rightVotes + leftVotes) * 100 : leftVotes ? 100 : 0;
     console.log(votePercent);
     var Line = ProgressBar.Line;
