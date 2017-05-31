@@ -248,6 +248,11 @@ var Home = React.createClass({
     // we can immediately call generateTwoRandoms because items are passed as a prop! actually not true.
   },
 
+  componentDidUpdate: function(prevProps) {
+    // check if user data is not same as previous, if yes, then check for existing votes.
+    if (prevProps.userData !== this.props.userData) this.checkExistingWinner();
+  },
+
   addItem: function(item, isLeft) {
     if (!item || !this.props.user || this.props.userData.points < 100) return;
     // increment the item count, and add the item. simple!
