@@ -148,7 +148,7 @@ class App extends React.Component {
           </div>
           <Switch>
             <Route exact path='/' render={(props) => <Home
-              {...props}
+              {...props} // for router history and all that.
               rebase={rebase}
               items={this.state.items}
               user={this.state.currentUser}

@@ -109,9 +109,10 @@ li {
 }
 
 .progressContainer {
-	max-width: 234px;
+	max-width: 468px;
+  display: flex;
 	@media screen and (max-width: 40.5em) {
-		max-width: 194px;
+		max-width: 388px;
 	}
   padding-top: 2px;
   margin: 0 auto;

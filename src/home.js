@@ -51,7 +51,7 @@ var Home = React.createClass({
     // now update the url silently, without reloading the page.
     this.props.history.push('/?p=' + hash)
     console.log(hash);
-    this.setState({pair: hash});
+    this.setState({pair: hash}, this.checkExistingWinner);
     // also update firebase with the new pair.
     this.props.rebase.fetch('pairs/' + hash, {
       context: this
@@ -67,6 +67,19 @@ var Home = React.createClass({
     }).catch(error => {
       console.log(error);
     })
+  },
+
+  checkExistingWinner: function() {
+    // check if already voted, and if yes, get which one won.
+    if (this.props.userData && _.includes(_.keys(this.props.userData.pairs), this.state.pair)) {
+      this.props.rebase.fetch('votes/' + this.props.userData.pairs[this.state.pair], {
+        context: this
+      }).then(data => {
+        console.log(data);
+        this.setState({existingWinner: data.winner});
+      })
+    }
+    else this.setState({existingWinner: null});
   },
 
   generateTwoRandoms: function(winner) {
@@ -99,7 +112,8 @@ var Home = React.createClass({
   },
 
   handleThingClick: function(item) {
-    if (this.state.paused || !this.props.user) return; // spam prevention! also logged-in checking.
+    // no clicking allowed if paused, not logged in, or previously voted on this pair.
+    if (this.state.paused || !this.props.user || _.includes(_.keys(this.props.userData.pairs), this.state.pair)) return;
     this.setState({paused: true}); // if we got in, prevent clicking.
     console.log(item)
     var otherItem = (item === this.state.item1) ? this.state.item2 : this.state.item1;
@@ -122,6 +136,10 @@ var Home = React.createClass({
           user.votes = {};
         }
         user.votes[newVote.key] = true;
+        if (!user.pairs) {
+          user.pairs = {};
+        }
+        user.pairs[this.state.pair] = newVote.key;
         // check if user voted on currently winning one.
         var votedVotes = (this.props.items[item] && this.props.items[item]["pairsFor"]) ? this.props.items[item]["pairsFor"][otherItem] : 0;
         var notVotedVotes = (this.props.items[otherItem] && this.props.items[otherItem]["pairsFor"]) ? this.props.items[otherItem]["pairsFor"][item] : 0;
@@ -208,10 +226,10 @@ var Home = React.createClass({
       }).then(data => {
         if (!_.isEmpty(data)) {
           this.setState({
-            item1: Object.keys(data)[0],
-            item2: Object.keys(data)[1],
+            item1: _.keys(data)[0],
+            item2: _.keys(data)[1],
             //pairData: data
-          });
+          }, this.checkExistingWinner);
         }
         else this.generateTwoRandoms();
       }).catch(error => {
@@ -265,16 +283,18 @@ var Home = React.createClass({
   },
 
   render: function() {
-    var leftVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item1]["pairsFor"]) ? this.props.items[this.state.item1]["pairsFor"][this.state.item2] : 0;
-    var rightVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item2]["pairsFor"]) ? this.props.items[this.state.item2]["pairsFor"][this.state.item1] : 0;
-    var votePercent = (rightVotes && leftVotes) ? leftVotes / (rightVotes + leftVotes) * 100 : leftVotes ? 100 : 0;
-    console.log(votePercent);
+    var leftVotes = (this.props.items[this.state.item1] && this.props.items[this.state.item1]["pairsFor"] && this.props.items[this.state.item1]["pairsFor"][this.state.item2]) ? this.props.items[this.state.item1]["pairsFor"][this.state.item2] : 0;
+    var rightVotes = (this.props.items[this.state.item2] && this.props.items[this.state.item2]["pairsFor"] && this.props.items[this.state.item2]["pairsFor"][this.state.item1]) ? this.props.items[this.state.item2]["pairsFor"][this.state.item1] : 0;
+    var leftPercent = leftVotes ? leftVotes / (leftVotes + rightVotes) : 0;
+    var rightPercent = rightVotes ? rightVotes / (leftVotes + rightVotes) : 0;
+    console.log(leftPercent, rightPercent);
     var Line = ProgressBar.Line;
     return (
       <div className="body">
         <div className="content">
           <h1>Choose which is cooler!</h1>
-          <p>Remember, there is no right answer.</p>
+          <p>{this.state.numberOfItems + " items and " + (0.5 * (this.state.numberOfItems - 1) * this.state.numberOfItems) + " pairs in DB."}</p>
+          <h2>{this.state.existingWinner && "You've already voted for " + this.props.items[this.state.existingWinner].name + " in this pair."}</h2>
           <div className="searchHolder">
             <Searchbox items={this.props.items} left={true} selected={this.placeNewItem} addItem={this.addItem} />
             <Searchbox items={this.props.items} left={false} selected={this.placeNewItem} addItem={this.addItem} />
@@ -288,8 +308,14 @@ var Home = React.createClass({
             </div>
           </div>
           <div className="progressContainer">
-            <Line progress={votePercent / 100} initialAnimate={true}
-              options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: styles.rightColour, duration: 350, easing: 'easeInOut'}}
+          <div style={{transform: 'rotate(180deg)'}}>
+            <Line progress={leftPercent} initialAnimate={true}
+              options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: 'rgba(0,0,0,0)',
+                duration: 1500, easing: 'easeInOut'}}
+              /></div>
+            <Line progress={rightPercent} initialAnimate={true}
+              options={{strokeWidth: 5, trailWidth: 5, color: styles.rightColour, trailColor: 'rgba(0,0,0,0)',
+                duration: 1500, easing: 'easeInOut'}}
               />
           </div>
           <div className="lockContainer">
