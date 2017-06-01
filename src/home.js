@@ -30,6 +30,7 @@ var Home = React.createClass({
       item2: 0,
       pair: null,
       //pairData: null,
+      hasVoted: false,
       keepWinner: false,
       locked: false, // false, 1 or 2. denotes which item won't change when generating new pair.
       paused: false // the N second timer to prevent spammy voting.
@@ -76,7 +77,7 @@ var Home = React.createClass({
         context: this
       }).then(data => {
         console.log(data);
-        this.setState({existingWinner: data.winner});
+        this.setState({existingWinner: data.winner, hasVoted: true});
       })
     }
     else this.setState({existingWinner: null});
@@ -104,7 +105,8 @@ var Home = React.createClass({
         this.changeUrl(random1, random2);
         this.setState({
           item1: random1,
-          item2: random2
+          item2: random2,
+          hasVoted: false
         });
       }
     }
@@ -212,7 +214,7 @@ var Home = React.createClass({
     })
 
     // Generate a new pair.
-    this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
+    //this.state.keepWinner ? this.generateTwoRandoms(item) : this.generateTwoRandoms();
   },
 
   setItemsFromUrl: function() {
@@ -250,7 +252,7 @@ var Home = React.createClass({
 
   componentDidUpdate: function(prevProps) {
     // check if user data is not same as previous, if yes, then check for existing votes.
-    if (prevProps.userData !== this.props.userData) this.checkExistingWinner();
+    if (this.props.userData && prevProps.userData !== this.props.userData) this.checkExistingWinner();
   },
 
   addItem: function(item, isLeft) {
@@ -314,13 +316,13 @@ var Home = React.createClass({
           </div>
           <div className="progressContainer">
           <div style={{transform: 'rotate(180deg)'}}>
-            <Line progress={leftPercent} initialAnimate={true}
+            <Line progress={this.state.hasVoted ? leftPercent : 0} initialAnimate={true}
               options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: 'rgba(0,0,0,0)',
-                duration: 1500, easing: 'easeInOut'}}
+                duration: 2500, easing: 'easeInOut'}}
               /></div>
-            <Line progress={rightPercent} initialAnimate={true}
+            <Line progress={this.state.hasVoted ? rightPercent : 0} initialAnimate={true}
               options={{strokeWidth: 5, trailWidth: 5, color: styles.rightColour, trailColor: 'rgba(0,0,0,0)',
-                duration: 1500, easing: 'easeInOut'}}
+                duration: 2500, easing: 'easeInOut'}}
               />
           </div>
           <div className="lockContainer">
@@ -334,8 +336,8 @@ var Home = React.createClass({
               !this.state.locked ? this.setState({locked: 2}) : this.state.locked === 2 ? this.setState({locked: false}) : this.setState({locked: 2})}>
               {this.state.locked === 2 ? "Unlock 2" : "Lock 2"}</button>
           </div>
-          <p>This matchup: left has {leftVotes ? leftVotes : 0} votes and right has {rightVotes ? rightVotes : 0}</p>
-          <button className="randomButton" onClick={() => this.generateTwoRandoms()}>Random pair!</button>
+          <p>{this.state.hasVoted && ("Left has " + (leftVotes ? leftVotes : 0) + " votes and right has " + (rightVotes ? rightVotes : 0))}</p>
+          <button className="randomButton" onClick={() => this.state.keepWinner ? this.generateTwoRandoms(this.state.existingWinner) : this.generateTwoRandoms()}>New pair!</button>
         </div>
       </div>
     );

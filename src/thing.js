@@ -13,8 +13,9 @@ class Thing extends React.Component{
   }
 
 	componentWillReceiveProps(nextProps) {
-		// first if required to not blank on prop comparison. change gif even if it remains same object.
-		if (nextProps.thing && (this.props.thing !== nextProps.thing)) {
+		// change if first loading, or if new item.
+		if ((nextProps.thing && this.props.thing === undefined) ||
+			 (nextProps.thing && this.props.thing && this.props.thing.name !== nextProps.thing.name)) {
 			this.setState({gif: null});
 			axios.get('https://api.giphy.com/v1/gifs/search?q=' + nextProps.thing.name.replace(/ /g, "+") + '&rating=pg&api_key=dc6zaTOxFJmzC&limit=25&sort=relevant')
 				.then(function(response) {
