@@ -45,10 +45,15 @@ var Home = React.createClass({
     }
   },
 
-  changeUrl: function(item1, item2) {
+  makeHashFromPair: function(item1, item2) {
     var pair = [item1, item2].sort();
     var hash = sha1(pair[0].toString() + ',' + pair[1].toString());
-    hash = base.to36(hash.slice(0, 9))
+    hash = base.to36(hash.slice(0, 9));
+    return hash;
+  },
+
+  changeUrl: function(item1, item2) {
+    var hash = this.makeHashFromPair(item1, item2);
     // now update the url silently, without reloading the page.
     this.props.history.push('/?p=' + hash)
     console.log(hash);
@@ -94,7 +99,11 @@ var Home = React.createClass({
       if (random1 === random2 || random1 === ".key" || random2 === ".key" || random1 === undefined || random2 === undefined) { // goddamn object .key prop.
         this.generateTwoRandoms(winner);
       }
-      // with 95% chance, generate new pair if current pair has no mutual votes.
+      // with 75% chance give logged in user a new pair they haven't voted on yet.
+      else if (this.props.user && perc < 0.95 && _.includes(_.keys(this.props.userData.pairs), this.makeHashFromPair(random1, random2))) {
+        this.generateTwoRandoms(winner);
+      }
+      // with 75% chance, generate new pair if current pair has no mutual votes.
       else if (perc < 0.75 && (
         (this.props.items[random1].pairsFor === undefined || this.props.items[random1].pairsFor[random2] === undefined) &&
         (this.props.items[random2].pairsFor === undefined || this.props.items[random2].pairsFor[random1] === undefined) ) )
@@ -316,11 +325,11 @@ var Home = React.createClass({
           </div>
           <div className="progressContainer">
           <div style={{transform: 'rotate(180deg)'}}>
-            <Line progress={this.state.hasVoted ? leftPercent : 0} initialAnimate={true}
+            <Line progress={this.state.hasVoted || !this.props.user ? leftPercent : 0} initialAnimate={true}
               options={{strokeWidth: 5, trailWidth: 5, color: styles.leftColour, trailColor: 'rgba(0,0,0,0)',
                 duration: 2500, easing: 'easeInOut'}}
               /></div>
-            <Line progress={this.state.hasVoted ? rightPercent : 0} initialAnimate={true}
+            <Line progress={this.state.hasVoted || !this.props.user ? rightPercent : 0} initialAnimate={true}
               options={{strokeWidth: 5, trailWidth: 5, color: styles.rightColour, trailColor: 'rgba(0,0,0,0)',
                 duration: 2500, easing: 'easeInOut'}}
               />
@@ -336,7 +345,7 @@ var Home = React.createClass({
               !this.state.locked ? this.setState({locked: 2}) : this.state.locked === 2 ? this.setState({locked: false}) : this.setState({locked: 2})}>
               {this.state.locked === 2 ? "Unlock 2" : "Lock 2"}</button>
           </div>
-          <p>{this.state.hasVoted && ("Left has " + (leftVotes ? leftVotes : 0) + " votes and right has " + (rightVotes ? rightVotes : 0))}</p>
+          <p>{(this.state.hasVoted || !this.props.user) && ("Left has " + (leftVotes ? leftVotes : 0) + " votes and right has " + (rightVotes ? rightVotes : 0))}</p>
           <button className="randomButton" onClick={() => this.state.keepWinner ? this.generateTwoRandoms(this.state.existingWinner) : this.generateTwoRandoms()}>New pair!</button>
         </div>
       </div>
