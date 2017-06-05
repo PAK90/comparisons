@@ -67,6 +67,7 @@ class App extends React.Component {
         signInSuccess: function(currentUser, credential, redirectUrl) {
           //alert("Signed in as "+currentUser + " with credential " + credential);
           this.setState({"modalIsOpen": false});
+          return true;
         }.bind(this)
       }
     };
@@ -131,7 +132,9 @@ class App extends React.Component {
       <Router history={browserHistory}>
         <div className='container'>
           <div className="header">
-            <h3>WhatIsCooler</h3>
+            <div>
+              <h3>WhatIsCooler</h3>
+            </div>
             <Nav/>
             <button onClick={this.openModal}>{!this.state.loggedIn ? "Login" : "Log out"}</button>
             <img src={this.state.currentUser && this.state.currentUser.photoURL} className="avatar" />

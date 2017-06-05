@@ -10,6 +10,7 @@ const ProgressBar = require('react-progressbar.js');
 import sha1 from 'sha1';
 const base = require('1636');
 const Raven = require('raven-js');
+const pluralize = require('pluralize')
 const queryString = require('query-string');
 const ReactRouter = require('react-router-dom');
 
@@ -57,6 +58,7 @@ var Home = React.createClass({
     // now update the url silently, without reloading the page.
     this.props.history.push('/?p=' + hash)
     console.log(hash);
+    // after setting pair state, check if this user has voted on this pair.
     this.setState({pair: hash}, this.checkExistingWinner);
     // also update firebase with the new pair.
     this.props.rebase.fetch('pairs/' + hash, {
@@ -100,7 +102,7 @@ var Home = React.createClass({
         this.generateTwoRandoms(winner);
       }
       // with 75% chance give logged in user a new pair they haven't voted on yet.
-      else if (this.props.user && perc < 0.95 && _.includes(_.keys(this.props.userData.pairs), this.makeHashFromPair(random1, random2))) {
+      else if (this.props.user && perc < 0.85 && _.includes(_.keys(this.props.userData.pairs), this.makeHashFromPair(random1, random2))) {
         this.generateTwoRandoms(winner);
       }
       // with 75% chance, generate new pair if current pair has no mutual votes.
@@ -262,10 +264,17 @@ var Home = React.createClass({
   componentDidUpdate: function(prevProps) {
     // check if user data is not same as previous, if yes, then check for existing votes.
     if (this.props.userData && prevProps.userData !== this.props.userData) this.checkExistingWinner();
+    // if the search URL changed, call changeUrl.
+    //if (this.props.location.search !== prevProps.location.search) this.setItemsFromUrl();
   },
 
   addItem: function(item, isLeft) {
     if (!item || !this.props.user || this.props.userData.points < 100) return;
+    // also check for plurals.
+    /*if (pluralize.plural(item) === item || pluralize.singular(item) === item) {
+      alert("already have plural/singular of " + item);
+      return;
+    }*/
     // increment the item count, and add the item. simple!
     // as a backup, check for item name in existing items OR if item is just whitespace.
     if (_.filter(this.props.items, ['name', item]).length || _.trim(item).length === 0) return;
